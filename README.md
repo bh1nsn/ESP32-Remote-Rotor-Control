@@ -8,9 +8,13 @@ Install the sketch using and Arduino IDE 1.8.12. Make sure you locate the files 
 Create a directory called data in the root directory of the sketch
 
 /webrotor.ini
+
 /data/bootstrap.min.css
+
 /data/gauge.min.js
+
 /data/jquery.slim.min.js
+
 /data/index.html
 
 A number of javascripts and css files are taken from the internet, so in case you like to have them locally because you are not connected to the internet, download them and put them in this data directory and chanhe the index.html file accordingly.
@@ -20,10 +24,12 @@ Functionality
 When pressing the CW button, the CW relais closes and if wired up correctly, your rotor turns Counter Clockwise.
 This is only possible if the brake switch is OFF.
 The same applies for the Counter Clock Wise button.
+
 In case the CW button is ON, and you press CCW, first the CW relais will be released, before the CCW is engaged.
 In case you press the brake and either CW or CCW is still on, then they will first be released, and after 1 second the brake will be put one.
 
 
 
 16-06-2020
+
 Erik, PA0ESH
