@@ -29,6 +29,31 @@ In case the CW button is ON, and you press CCW, first the CW relais will be rele
 In case you press the brake and either CW or CCW is still on, then they will first be released, and after 1 second the brake will be put one.
 
 
+Compass indictator
+
+Every rotor has a build in potentiometer of approx 500 Ohm.
+Connect one side to GND and the other side to the 3.3V of the ESP32. Connect the middle pin to pin 34 of the ESP32.
+The values of the ADC1 are then converted from 0-4096, into 0 - 360 degreees.
+Since the ADC is not 100% lineair, you may have to put some small resistors from GND to the potentiometer as well as from 3.3V to the potentiometer. This is still WIP on my side/
+
+A small capacitor og 1nF helps to remove some noise.
+The algoritm for the compas is looking for changes more than 3 degrees, before the compass is turning. Every 60 seconds, the real value is sent, so drifting in the wind will result in the compass rose slowly following.
+
+In the making:
+
+- Auto stop when reaching 0 or 360 degrees.
+- Sending outut values to the serial port for connection to other smart rotors.
+- interface with hamradio like programmes.
+- 
+- Tell back from the antenna to the ESP using another ESP32 and a 9 sensor borad, telling
+  - real bearing
+  - elevation
+  - temp
+  
+  
+
+
+
 
 16-06-2020
 
