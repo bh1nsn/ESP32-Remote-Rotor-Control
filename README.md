@@ -10,13 +10,9 @@ Install the sketch using and Arduino IDE 1.8.12. Make sure you locate the files 
 Create a directory called data in the root directory of the sketch
 
 /webrotor.ini
-
 /data/bootstrap.min.css
-
 /data/gauge.min.js
-
 /data/jquery.slim.min.js
-
 /data/index.html
 
 A number of javascripts and css files are taken from the internet, so in case you like to have them locally because you are not connected to the internet, download them and put them in this data directory and chanhe the index.html file accordingly.
