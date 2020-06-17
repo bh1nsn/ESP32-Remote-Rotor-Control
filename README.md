@@ -1,5 +1,6 @@
 # ESP32-Remote-Rotor-Control
-This add on can be used either stand alone, or as a wintest rotor interface. It is work in progress.
+This add on can be used either stand alone, or as a wintest rotor interface. I have build it to control the digital rotor as developped by Marco, PE1BR for the VERON VRZA group here in the East of the Netherlands
+It is work in progress.
 
 The hardware you need is an ESP32 Wrover, and a relay board. I used the HL-525 from Reichelt (or AliExpress)
 https://www.reichelt.nl/ontwikkelaarsraden-relaismodule-2-kanaals-5-v-srd-05vdc-sl-debo-relais-2ch-p242810.html?PROVID=2788&gclid=CjwKCAjw26H3BRB2EiwAy32zhU72tswg4FBrAR0KWsQmJR1nNtFcYFlWGHHX8jrAQR5pAAK0ftkyDBoCavoQAvD_BwE&&r=1
