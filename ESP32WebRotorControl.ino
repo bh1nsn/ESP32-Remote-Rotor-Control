@@ -399,15 +399,14 @@ void sent_bearing(){
      // compare last & current value of bearing. Only sent new data if > 3 degrees.
       analog_val = analogRead(analog_pin);   
       analog_val = map(analog_val,4,4096,0,360);  // here is wehere you convert from voltage rotor into degrees
-      if (analog_val_old < analog_val-3 || analog_val_old > analog_val +3) {
-      String randomNumber = String(random(0,20));
-      String rotor = String(analog_val);
+      if (analog_val_old < analog_val-1 || analog_val_old > analog_val +1 ) {
+        String rotor = String(analog_val);
       if(globalClient != NULL){
               globalClient->text(rotor);
               Serial.print("Current Rotor bearing is :");
               Serial.println(analog_val);  
-              Serial.print("Previous Rotor bearing is :");
-              Serial.println(analog_val_old);  
+              //Serial.print("Previous Rotor bearing is :");
+              //Serial.println(analog_val_old);  
               analog_val_old = analog_val;
                     
       
