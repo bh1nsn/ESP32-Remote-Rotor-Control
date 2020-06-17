@@ -90,32 +90,21 @@ boolean LED_state[4] = {0};       // stores the states of the LEDs
 
  
 // Globals
-AsyncWebServer server(80);
-WebSocketsServer webSocket = WebSocketsServer(1337);
-AsyncWebSocket ws("/ws");
-AsyncWebSocketClient * globalClient = NULL;
+
 char msg_buf[10];
 char *rot_string;
+
+
+AsyncWebServer server(80);
+WebSocketsServer webSocket = WebSocketsServer(1337);
+
+
 
  
 /***********************************************************
  * Functions
  */
 
-void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
- 
-  if(type == WS_EVT_CONNECT){
- 
-    Serial.println("Websocket client connection received");
-    globalClient = client;
- 
-  } else if(type == WS_EVT_DISCONNECT){
- 
-    Serial.println("Websocket client connection finished");
-    globalClient = NULL;
- 
-  }
-}
 
 
 // Callback: receiving any WebSocket message
@@ -160,7 +149,13 @@ void onWebSocketEvent(uint8_t client_num,
 
         if (brake_state == 1){
         exit;
-        } else {    
+        } else {
+
+        if (ccw_state == 1){
+         ccw_state=0;
+         digitalWrite(ccw_pin, ccw_state);
+         delay(500);
+        }
         cw_state = cw_state ? 0 : 1;
         Serial.printf("Toggling CW switch to %u\n", cw_state);
         digitalWrite(cw_pin, cw_state);
@@ -172,6 +167,12 @@ void onWebSocketEvent(uint8_t client_num,
        if (brake_state == 1){
         exit;
         } else {
+
+        if (cw_state == 1){
+         cw_state=0;
+         digitalWrite(cw_pin, cw_state);
+         delay(500);
+        }
 
         ccw_state = ccw_state ? 0 : 1;
         Serial.printf("Toggling CCW switch to %u\n", ccw_state);
@@ -188,14 +189,14 @@ void onWebSocketEvent(uint8_t client_num,
          cw_state=0;
          Serial.printf("Toggling the CW switch to %u\n", cw_state);
          digitalWrite(cw_pin, cw_state);
-         delay(2000);
+         delay(1500);
         }
 
         if (ccw_state == 1){
          ccw_state=0;
          Serial.printf("Toggling the CCW switch to %u\n", ccw_state);
          digitalWrite(ccw_pin, ccw_state);
-         delay(2000);
+         delay(1500);
         }
   
         digitalWrite(brake_pin, brake_state);
@@ -217,6 +218,16 @@ void onWebSocketEvent(uint8_t client_num,
         sprintf(msg_buf, "%d", ccw_state+4);
         Serial.printf("Sending to [%u]: %s\n", client_num, msg_buf);
         webSocket.sendTXT(client_num, msg_buf);
+
+        // Report the state of the rotor bearing button
+      } else if ( strcmp((char *)payload, "getBEARINGState") == 0 ) {
+        Serial.println("Sending bearing data to client");
+        analog_val = analogRead(analog_pin);   
+        analog_val = map(analog_val,4,4096,0,360);  // here is wehere you convert from voltage rotor into degrees
+        String rotor = String(analog_val);
+        rotor = "Bearing :"+rotor,
+        webSocket.sendTXT(0, rotor);
+
         
         // Report the state of the BRAKE button
       } else if ( strcmp((char *)payload, "getBRAKEState") == 0 ) {
@@ -334,8 +345,6 @@ while (WiFi.status() != WL_CONNECTED) {
   Serial.print("My IP address: ");
   Serial.println(WiFi.softAPIP());
 
-  ws.onEvent(onWsEvent);
-  server.addHandler(&ws);
 
  
   // On HTTP request for root, provide index.html file
@@ -378,8 +387,7 @@ String xmlResponse()
         analog_val = map(analog_val,4,4096,0,360);  // here is wehere you convert from voltage rotor into degrees
         Serial.println("reading pin 34 as : ");   // then adapt the map values accordingly.
         Serial.print (analog_val);
-     
-
+  
         res += "<analog>";
         res += String(analog_val);
         res += "</analog>\n";
@@ -395,28 +403,40 @@ void ajaxInputs() {
                                                                     // 200 - means Success html result code
 }
 
-void sent_bearing(){
-     // compare last & current value of bearing. Only sent new data if > 3 degrees.
+void read_rotor_bearing(){
       analog_val = analogRead(analog_pin);   
-      analog_val = map(analog_val,4,4096,0,360);  // here is wehere you convert from voltage rotor into degrees
-      if (analog_val_old < analog_val-1 || analog_val_old > analog_val +1 ) {
-        String rotor = String(analog_val);
-      if(globalClient != NULL){
-              globalClient->text(rotor);
+      analog_val = map(analog_val,4,4096,0,360);  // here is wehere you convert from voltage rotor into degree
+}
+
+
+void emergency_stop(){
+if (analog_val < 2 ) {
+cw_state = 0;
+digitalWrite(cw_pin, cw_state);
+} else if (analog_val > 358 ) {
+ccw_state = 0;
+digitalWrite(ccw_pin, ccw_state);
+}
+}
+
+void sent_bearing_ws(){
+     // compare last & current value of bearing. Only sent new data if > 2 degrees.
+    read_rotor_bearing();
+    if (analog_val < analog_val_old-1 || analog_val > analog_val_old +1 ) {
+              String rotor = String(analog_val);
+              rotor = "Bearing :"+rotor,
+              webSocket.sendTXT(0, rotor);
               Serial.print("Current Rotor bearing is :");
               Serial.println(analog_val);  
               //Serial.print("Previous Rotor bearing is :");
               //Serial.println(analog_val_old);  
               analog_val_old = analog_val;
-                    
-      
-      }
   }
 }
 void loop() {
   // Look for and handle WebSocket data
   webSocket.loop();
-  sent_bearing();
-
- delay(500);
+  sent_bearing_ws();
+  emergency_stop();
+  delay(200);
 }

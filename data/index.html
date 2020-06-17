@@ -79,23 +79,6 @@
     <script src="gauge.min.js"></script>
     
     
-    <script type = "text/javascript">
-        var ws = new WebSocket("ws://192.168.178.85/ws");
- 
-        ws.onopen = function() {
-            window.alert("Connected");
-         };
- 
-         ws.onmessage = function(evt) {
-             console.log("Received by the webpage: " + evt.data);
-             document.getElementById("display").innerHTML  = "Bearing set to : " + evt.data + " º";
-             var adc;
-             adc = evt.data;
-             gauge.value = adc;
-             
-        };
- 
-      </script>
      <script language="javascript" type="text/javascript">
  
 var url = "ws://192.168.178.85:1337/";
@@ -137,6 +120,8 @@ function onOpen(evt) {
     // Log connection state
     console.log("Connected");
     
+    document.getElementById("display").innerHTML = "connected to rotor";
+    
     // Enable button
     var cw_status;
     cw_status = document.getElementById("button_cw").innerHTML;
@@ -162,6 +147,8 @@ function onOpen(evt) {
     doSend("getCWState");
     doSend("getCCWState");
     doSend("getBRAKEState");
+    doSend("getBEARINGState");
+    
 }
  
 // Called when the WebSocket connection is closed
@@ -169,6 +156,7 @@ function onClose(evt) {
  
     // Log disconnection state
     console.log("Disconnected");
+    
     
     // Disable button
     button_brake.disabled = true;
@@ -199,6 +187,13 @@ function onMessage(evt) {
     // Print out our received message
     console.log("Received by the webpage: " + evt.data);
     
+    var res = evt.data.substr(0, 9);
+    if (res == "Bearing :") {
+    res = evt.data.substr(9, 3);
+    console.log("This is bearing data: " + res + " degrees");
+    gauge.value = res;    
+    }
+    
     // Update circle graphic with LED state
     switch(evt.data) {
             case "0":
@@ -220,7 +215,7 @@ function onMessage(evt) {
             var ccw_status;
             ccw_status = document.getElementById("button_ccw").innerHTML;
             if (ccw_status == "CCW ON"){
-            doSend("toggleCCW");
+            //doSend("toggleCCW");
             //doSend("getCCWState");
             console.log("CCW switch is switched to OFF");
             }
@@ -239,7 +234,7 @@ function onMessage(evt) {
             var cw_status;
             cw_status = document.getElementById("button_cw").innerHTML;
             if (cw_status == "CW ON"){
-            doSend("toggleCW");
+            //doSend("toggleCW");
             //doSend("getCWState");
             console.log("CW switch is switched to OFF");
             }
@@ -364,7 +359,7 @@ window.addEventListener("load", init, false);
         <script>
             var gauge = new RadialGauge({
             renderTo: 'kompass',
-            height:300,
+            height:250,
             minValue: 0,
             maxValue: 360,
             majorTicks: [
@@ -391,8 +386,8 @@ window.addEventListener("load", init, false);
             colorNeedleEnd: "rgba(255, 160, 122, .9)",
             valueBox: false,
             valueTextShadow: false,
-            colorCircleInner: "#fff",
-            colorNeedleCircleOuter: "#ccc",
+            colorCircleInner: "red",
+            colorNeedleCircleInner: "grey",
             needleCircleSize: 15,
             needleCircleOuter: false,
             animationRule: "linear",
@@ -408,7 +403,10 @@ window.addEventListener("load", init, false);
             colorBorderOuterEnd: "#ccc",
             colorNeedleShadowDown: "#222",
             borderShadowWidth: 0,
-            animationDuration: 1500
+            valueBox: true,
+            valueInt: 3,
+            valueDec: 0,
+            animationDuration: 1000
         }).draw();
         
         </script>
@@ -426,7 +424,6 @@ window.addEventListener("load", init, false);
         
 <div class="container-fluid">
     <div class="col-lg-12 text-center">
-        <h4 class="mt-5">Rotor Control</h4>
         <p id = "display">Not connected to Rotor</p>
         <button type="button" class="button custom" id="button_cw" onclick="onPressButton(1)" disabled>CW OFF </button>
         <button type="button" class="button custom" id="button_ccw" onclick="onPressButton(2)" disabled>CCW OFF</button>
