@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------
- * WiFI Rotor Controller
+ * WiFI Rotor Controller - test versie
 
   Description:  ESP32 server in combination with ajax calls
                 realizes an app which constantly show the bearing
@@ -38,7 +38,7 @@
                 page called /index.htmL. Use ESP32 Tool
                 to upload File system contents via Arduino IDE.
                 
-  Date:         16-06-2020
+  Date:         17-06-2020
  
   Author:       Erik Schott - erik@pa0esh.com
 --------------------------------------------------------------*/
@@ -51,9 +51,9 @@
 
 
 
-const char *ssid_wl           = "xxxxxxxxxx";
+const char *ssid_wl           = "xxxxxxxxxxxxxxxxxxx";
 const char *ssid_ap           = "Webrotor";
-const char *password          =  "xxxxxxxxxx";
+const char *password          =  "xxxxxxxxxxxxxxxxxx";
 const char *msg_toggle_led    = "toggleLED";
 const char *msg_toggle_CW     = "toggleCW";
 const char *msg_toggle_CCW    = "toggleCCW";
@@ -69,17 +69,21 @@ const int dns_port  = 53;
 const int http_port = 80;
 const int ws_port   = 1337;
 
-const int led_pin   = 32;  // Testing LED pin
-const int cw_pin    = 26;  // connect your cw relais between GND and this pin
-const int ccw_pin   = 27;  // connect your ccw relais between GND and this pin
-const int brake_pin = 14;  // connect your brake relais between GND and this pin
-const int spare_pin    = 12;  // connect your spare relais between GND and this pin
+const int led_pin     = 32;  // Testing LED pin
+const int cw_pin      = 26;  // connect your cw relais between GND and this pin
+const int ccw_pin     = 27;  // connect your ccw relais between GND and this pin
+const int brake_pin   = 14;  // connect your brake relais between GND and this pin
+const int spare_pin   = 12;  // connect your spare relais between GND and this pin
+const int analog_pin  = 34;  // connect your spare relais between GND and this pin
+
 
 int led_state     = 0;
 int cw_state      = 0;
 int ccw_state     = 0;
 int brake_state   = 0;
 int stop_state    = 0;
+int analog_val    = 0;
+int analog_val_old = 0;
 
 
 boolean LED_state[4] = {0};       // stores the states of the LEDs
@@ -88,12 +92,31 @@ boolean LED_state[4] = {0};       // stores the states of the LEDs
 // Globals
 AsyncWebServer server(80);
 WebSocketsServer webSocket = WebSocketsServer(1337);
+AsyncWebSocket ws("/ws");
+AsyncWebSocketClient * globalClient = NULL;
 char msg_buf[10];
+char *rot_string;
 
  
 /***********************************************************
  * Functions
  */
+
+void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
+ 
+  if(type == WS_EVT_CONNECT){
+ 
+    Serial.println("Websocket client connection received");
+    globalClient = client;
+ 
+  } else if(type == WS_EVT_DISCONNECT){
+ 
+    Serial.println("Websocket client connection finished");
+    globalClient = NULL;
+ 
+  }
+}
+
 
 // Callback: receiving any WebSocket message
 void onWebSocketEvent(uint8_t client_num,
@@ -106,7 +129,7 @@ void onWebSocketEvent(uint8_t client_num,
  
     // Client has disconnected
     case WStype_DISCONNECTED:
-      set_stop();
+        set_stop();
       Serial.printf("[%u] Disconnected!\n", client_num);
       
       break;
@@ -124,7 +147,7 @@ void onWebSocketEvent(uint8_t client_num,
     case WStype_TEXT:
  
       // Print out raw message
-      Serial.printf("Received text from: [%u] Payload: %s\n", client_num, payload);
+       Serial.printf("Received text from: [%u] Payload: %s\n", client_num, payload);
  
       // Toggle LED
       if ( strcmp((char *)payload, "toggleLED") == 0 ) {
@@ -137,7 +160,7 @@ void onWebSocketEvent(uint8_t client_num,
 
         if (brake_state == 1){
         exit;
-        } else {
+        } else {    
         cw_state = cw_state ? 0 : 1;
         Serial.printf("Toggling CW switch to %u\n", cw_state);
         digitalWrite(cw_pin, cw_state);
@@ -204,6 +227,7 @@ void onWebSocketEvent(uint8_t client_num,
       // Message not recognized
       } else {
         Serial.println("[%u] Message not recognized");
+        
       }
       break;
  
@@ -309,6 +333,10 @@ while (WiFi.status() != WL_CONNECTED) {
   Serial.println("AP running");
   Serial.print("My IP address: ");
   Serial.println(WiFi.softAPIP());
+
+  ws.onEvent(onWsEvent);
+  server.addHandler(&ws);
+
  
   // On HTTP request for root, provide index.html file
   server.on("/", HTTP_GET, onIndexRequest);
@@ -334,10 +362,60 @@ while (WiFi.status() != WL_CONNECTED) {
   webSocket.onEvent(onWebSocketEvent);
   
 }
- 
+
+// Rotor bearing values taken from 500 ohm potentiometer - middle pin connects to 34
+String xmlResponse()
+{
+    String res = "";                    // String to assemble XML response values
+    int analog_val;                     // stores value read from analog inputs
+     
+    res += "<?xml version = \"1.0\" ?>\n";
+    res +="<inputs>\n";
+    // read analog input
+    // ESP32 has many Analog inputs (ADC1 - do not use ADC2). It's 12bit (4096 values) Measuring range is 0-3.3V. Beginning and endingis not lineair.
+    // use 2 resistors opr potentiometers to calibrate the hardware.
+        analog_val = analogRead(analog_pin);   
+        analog_val = map(analog_val,4,4096,0,360);  // here is wehere you convert from voltage rotor into degrees
+        Serial.println("reading pin 34 as : ");   // then adapt the map values accordingly.
+        Serial.print (analog_val);
+     
+
+        res += "<analog>";
+        res += String(analog_val);
+        res += "</analog>\n";
+    // read switches
+    res += "</inputs>";
+    return res;
+}
+
+void ajaxInputs() {
+  //server.sendHeader("Connection", "close");                         // Headers to free connection ASAP and 
+  //server.sendHeader("Cache-Control", "no-store, must-revalidate");  // Don't cache response
+  //server.send(200, "text/xml", xmlResponse());                      // Send string from xmlResponse() as XML document to cliend.
+                                                                    // 200 - means Success html result code
+}
+
+void sent_bearing(){
+     // compare last & current value of bearing. Only sent new data if > 3 degrees.
+      analog_val = analogRead(analog_pin);   
+      analog_val = map(analog_val,4,4096,0,360);  // here is wehere you convert from voltage rotor into degrees
+      if (analog_val_old < analog_val-3 || analog_val_old > analog_val +3) {
+      String randomNumber = String(random(0,20));
+      String rotor = String(analog_val);
+      if(globalClient != NULL){
+              globalClient->text(rotor);
+              Serial.print("Current Rotor bearing is :");
+              Serial.println(analog_val);  
+              Serial.print("Previous Rotor bearing is :");
+              Serial.println(analog_val);        
+      
+      }
+  }
+}
 void loop() {
-  
   // Look for and handle WebSocket data
   webSocket.loop();
-  
+  sent_bearing();
+
+ delay(500);
 }
