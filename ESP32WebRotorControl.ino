@@ -38,7 +38,7 @@
                 page called /index.htmL. Use ESP32 Tool
                 to upload File system contents via Arduino IDE.
                 
-  Date:         17-06-2020
+  Date:         16-06-2020
  
   Author:       Erik Schott - erik@pa0esh.com
 --------------------------------------------------------------*/
@@ -51,9 +51,9 @@
 
 
 
-const char *ssid_wl           = "xxxxxxxxxxxxxxxxxxx";
+const char *ssid_wl           = "Kotona-Boven-2.4";
 const char *ssid_ap           = "Webrotor";
-const char *password          =  "xxxxxxxxxxxxxxxxxx";
+const char *password          =  "Stt1951_mrs";
 const char *msg_toggle_led    = "toggleLED";
 const char *msg_toggle_CW     = "toggleCW";
 const char *msg_toggle_CCW    = "toggleCCW";
@@ -407,7 +407,9 @@ void sent_bearing(){
               Serial.print("Current Rotor bearing is :");
               Serial.println(analog_val);  
               Serial.print("Previous Rotor bearing is :");
-              Serial.println(analog_val);        
+              Serial.println(analog_val_old);  
+              analog_val_old = analog_val;
+                    
       
       }
   }
