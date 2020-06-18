@@ -79,16 +79,15 @@
     <script src="gauge.min.js"></script>
     
     
-     <script language="javascript" type="text/javascript">
- 
+<script language="javascript" type="text/javascript">
+// websocket connect info - define fuctip to obtain websocket ip on the fly
 var url = "ws://192.168.178.85:1337/";
 //var output;
-
 var button_brake;
 var button_cw;
 var button_ccw;
 var context;
- 
+
 // This is called when the page finishes loading
 function init() {
  
@@ -96,8 +95,7 @@ function init() {
     button_brake = document.getElementById("button_brake");
     button_cw = document.getElementById("button_cw");
     button_ccw = document.getElementById("button_ccw");
-    //output = document.getElementById("output");
-    // Connect to WebSocket server
+     // Connect to WebSocket server
     wsConnect(url);
 }
  
@@ -106,7 +104,6 @@ function wsConnect(url) {
     
     // Connect to WebSocket server
     websocket = new WebSocket(url);
-    
     // Assign callbacks
     websocket.onopen = function(evt) { onOpen(evt) };
     websocket.onclose = function(evt) { onClose(evt) };
@@ -114,15 +111,22 @@ function wsConnect(url) {
     websocket.onerror = function(evt) { onError(evt) };
 }
  
+function chime(){
+    var audioElement = new Audio('connected.mp3');
+    audioElement.loop = false;
+    audioElement.play();
+} 
+   
 // Called when a WebSocket connection is established with the server
 function onOpen(evt) {
  
     // Log connection state
-    console.log("Connected");
-    
-    document.getElementById("display").innerHTML = "connected to rotor";
-    
-    // Enable button
+     console.log("Connected");
+     chime();
+     document.getElementById("display").innerHTML = "connected to rotor";
+    // Get the current position from the rotor
+     doSend("getBEARINGState");
+    //Get the current switch states from the rotor
     var cw_status;
     cw_status = document.getElementById("button_cw").innerHTML;
     if (cw_status == "CW ON"){
@@ -137,18 +141,10 @@ function onOpen(evt) {
     doSend("getCCWState");
     console.log("CCW switch is switched to OFF");
     }
- 
+    //Enable the buttons
     button_brake.disabled = false;
     button_cw.disabled = false;
     button_ccw.disabled = false;
-    
-    // Get the current state of the LED
-    doSend("getLEDState");
-    doSend("getCWState");
-    doSend("getCCWState");
-    doSend("getBRAKEState");
-    doSend("getBEARINGState");
-    
 }
  
 // Called when the WebSocket connection is closed
@@ -156,7 +152,7 @@ function onClose(evt) {
  
     // Log disconnection state
     console.log("Disconnected");
-    
+    chime();
     
     // Disable button
     button_brake.disabled = true;
@@ -177,7 +173,6 @@ function onClose(evt) {
     doSend("getCCWState");
     console.log("CCW switch is switched to OFF");
     }
-    
     // Try to reconnect after a few seconds
     setTimeout(function() { wsConnect(url) }, 20000);
 }
@@ -190,7 +185,7 @@ function onMessage(evt) {
     var res = evt.data.substr(0, 9);
     if (res == "Bearing :") {
     res = evt.data.substr(9, 3);
-    console.log("This is bearing data: " + res + " degrees");
+    //console.log("This is bearing data: " + res + " degrees");
     gauge.value = res;    
     }
     
@@ -198,11 +193,11 @@ function onMessage(evt) {
     switch(evt.data) {
             case "0":
             console.log("Brake is is switched to OFF");
-            document.getElementById("button_brake").innerHTML = "Brake OFF";
+            document.getElementById("button_brake").innerHTML = "BRAKE OFF";
             break;
         case "1":
             console.log("Brake is is switched to ON");
-            document.getElementById("button_brake").innerHTML = "Brake ON";
+            document.getElementById("button_brake").innerHTML = "BRAKE ON";
             break;
  
 // CW switch
@@ -246,7 +241,7 @@ function onMessage(evt) {
 // BRAKE switch
        case "6":
             console.log("Brake is switched to OFF");
-            document.getElementById("button_brake").innerHTML = "Brake OFF";
+            document.getElementById("button_brake").innerHTML = "BRAKE OFF";
             button_cw.disabled = false;
             button_ccw.disabled = false;
 
@@ -267,7 +262,7 @@ function onMessage(evt) {
             console.log("CCW switch is switched to OFF");
             }
             console.log("Brake is is switched to ON");
-            document.getElementById("button_brake").innerHTML = "Brake On";
+            document.getElementById("button_brake").innerHTML = "BRAKE ON";
             button_cw.disabled = true;
             button_ccw.disabled = true;
             break;
@@ -293,19 +288,19 @@ function doSend(message) {
 function onPressButton(x) {
     switch(x){
         case 1:
-        doSend("toggleCW");
-        doSend("getCWState");
-        break;
+            doSend("toggleCW");
+            doSend("getCWState");
+            break;
         case 2:
-        doSend("toggleCCW");
-        doSend("getCCWState");
-        break;
+            doSend("toggleCCW");
+            doSend("getCCWState");
+            break;
         case 3:
-        doSend("toggleBRAKE");
-        doSend("getBRAKEState");
-        break;
+            doSend("toggleBRAKE");
+            doSend("getBRAKEState");
+            break;
         default:
-        break;
+            break;
             
     }
 
@@ -328,7 +323,7 @@ window.addEventListener("load", init, false);
 
  
     <div class="container-fluid">
-    <body onload="GetRotorBearing()">
+    <body>
      <!-- Navigation -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark static-top">
     <div class="container-fluid">
@@ -406,7 +401,7 @@ window.addEventListener("load", init, false);
             valueBox: true,
             valueInt: 3,
             valueDec: 0,
-            animationDuration: 1000
+            animationDuration: 1500
         }).draw();
         
         </script>
@@ -440,13 +435,12 @@ window.addEventListener("load", init, false);
                      </table>
 
                     </center>
-        
 
 
    <!-- Footer -->
     <footer id="sticky-footer" class="py-4 bg-dark text-white-50">
         <div class="container text-center">
-        <small>GNU licence &copy; 2020 PA0ESH - V1.1</small>
+        <small>GNU licence &copy; 2020 PA0ESH - V1.2</small>
         </div>
   </footer>
     </body>
