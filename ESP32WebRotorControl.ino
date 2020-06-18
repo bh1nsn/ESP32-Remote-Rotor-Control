@@ -31,14 +31,14 @@
                 Relays: Jotta SSR-25 da
                 
   Software:     Developed using Arduino 1.8.12 software
-                ESP32 WROOM/Arduino 2.3.0
+                for the ESP32 Wrover
                 Should be compatible with Arduino 1.0 + and
                 newer ESP32/Arduino releases if any
                 Internal flash File system should contain web
-                page called /index.htmL. Use ESP32 Tool
-                to upload File system contents via Arduino IDE.
+                page called /index.htmL and some css and js files
+                Use ESP32 Tool to upload File system contents via Arduino IDE.
                 
-  Date:         16-06-2020
+  Date:         18-06-2020
  
   Author:       Erik Schott - erik@pa0esh.com
 --------------------------------------------------------------*/
@@ -51,9 +51,9 @@
 
 
 
-const char *ssid_wl           = "xxxxxxxxxxxxxxxx";
+const char *ssid_wl           = "Kotona-Boven-2.4";
 const char *ssid_ap           = "Webrotor";
-const char *password          = "xxxxxxxxxxxxxxxx";
+const char *password          =  "Stt1951_mrs";
 const char *msg_toggle_led    = "toggleLED";
 const char *msg_toggle_CW     = "toggleCW";
 const char *msg_toggle_CCW    = "toggleCCW";
@@ -93,7 +93,7 @@ boolean LED_state[4] = {0};       // stores the states of the LEDs
 
 char msg_buf[10];
 char *rot_string;
-
+char client_rotor;
 
 AsyncWebServer server(80);
 WebSocketsServer webSocket = WebSocketsServer(1337);
@@ -205,19 +205,19 @@ void onWebSocketEvent(uint8_t client_num,
       } else if ( strcmp((char *)payload, "getLEDState") == 0 ) {
         sprintf(msg_buf, "%d", led_state);
         Serial.printf("Sending to [%u]: %s\n", client_num, msg_buf);
-        webSocket.sendTXT(client_num, msg_buf);
+        webSocket.broadcastTXT(msg_buf);
 
       // Report the state of the CW button
       } else if ( strcmp((char *)payload, "getCWState") == 0 ) {
         sprintf(msg_buf, "%d", cw_state +2);
         Serial.printf("Sending to [%u]: %s\n", client_num, msg_buf);
-        webSocket.sendTXT(client_num, msg_buf);
+        webSocket.broadcastTXT(msg_buf);
         
         // Report the state of the CCW button
       } else if ( strcmp((char *)payload, "getCCWState") == 0 ) {
         sprintf(msg_buf, "%d", ccw_state+4);
         Serial.printf("Sending to [%u]: %s\n", client_num, msg_buf);
-        webSocket.sendTXT(client_num, msg_buf);
+        webSocket.broadcastTXT(msg_buf);
 
         // Report the state of the rotor bearing button
       } else if ( strcmp((char *)payload, "getBEARINGState") == 0 ) {
@@ -226,14 +226,15 @@ void onWebSocketEvent(uint8_t client_num,
         analog_val = map(analog_val,4,4096,0,360);  // here is wehere you convert from voltage rotor into degrees
         String rotor = String(analog_val);
         rotor = "Bearing :"+rotor,
-        webSocket.sendTXT(0, rotor);
+        webSocket.broadcastTXT( rotor);
+        
 
         
         // Report the state of the BRAKE button
       } else if ( strcmp((char *)payload, "getBRAKEState") == 0 ) {
         sprintf(msg_buf, "%d", brake_state+6);
         Serial.printf("Sending to [%u]: %s\n", client_num, msg_buf);
-        webSocket.sendTXT(client_num, msg_buf);
+        webSocket.broadcastTXT(msg_buf);
  
       // Message not recognized
       } else {
@@ -406,17 +407,18 @@ void ajaxInputs() {
 void read_rotor_bearing(){
       analog_val = analogRead(analog_pin);   
       analog_val = map(analog_val,4,4096,0,360);  // here is wehere you convert from voltage rotor into degree
+      // calibration routine be be written
 }
 
 
 void emergency_stop(){
-if (analog_val < 2 ) {
-cw_state = 0;
-digitalWrite(cw_pin, cw_state);
-} else if (analog_val > 358 ) {
-ccw_state = 0;
-digitalWrite(ccw_pin, ccw_state);
-}
+    if (analog_val < 2 ) {
+    cw_state = 0;
+    digitalWrite(cw_pin, cw_state);
+    } else if (analog_val > 358 ) {
+    ccw_state = 0;
+    digitalWrite(ccw_pin, ccw_state);
+    }
 }
 
 void sent_bearing_ws(){
@@ -425,7 +427,7 @@ void sent_bearing_ws(){
     if (analog_val < analog_val_old-1 || analog_val > analog_val_old +1 ) {
               String rotor = String(analog_val);
               rotor = "Bearing :"+rotor,
-              webSocket.sendTXT(0, rotor);
+              webSocket.broadcastTXT(rotor);
               Serial.print("Current Rotor bearing is :");
               Serial.println(analog_val);  
               //Serial.print("Previous Rotor bearing is :");
