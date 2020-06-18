@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------
- * WiFI Rotor Controller - test versie
+ * WiFI Rotor Controller - Version 1.2
 
   Description:  ESP32 server in combination with ajax calls
                 realizes an app which constantly show the bearing
@@ -38,7 +38,7 @@
                 page called /index.htmL and some css and js files
                 Use ESP32 Tool to upload File system contents via Arduino IDE.
                 
-  Date:         18-06-2020
+  Date:         19-06-2020
  
   Author:       Erik Schott - erik@pa0esh.com
 --------------------------------------------------------------*/
@@ -51,9 +51,9 @@
 
 
 
-const char *ssid_wl           = "...............";  // your home WiFi network
-const char *ssid_ap           = "Webrotor";         // Name of the accespoint - using same password below
-const char *password          = "...............";  // your home WiFi network password
+const char *ssid_wl           = "Kotona-Boven-2.4";
+const char *ssid_ap           = "Webrotor";
+const char *password          =  "Stt1951_mrs";
 const char *msg_toggle_led    = "toggleLED";
 const char *msg_toggle_CW     = "toggleCW";
 const char *msg_toggle_CCW    = "toggleCCW";
