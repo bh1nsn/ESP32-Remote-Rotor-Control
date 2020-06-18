@@ -51,9 +51,9 @@
 
 
 
-const char *ssid_wl           = "Kotona-Boven-2.4";
-const char *ssid_ap           = "Webrotor";
-const char *password          =  "Stt1951_mrs";
+const char *ssid_wl           = "...............";  // your home WiFi network
+const char *ssid_ap           = "Webrotor";         // Name of the accespoint - using same password below
+const char *password          = "...............";  // your home WiFi network password
 const char *msg_toggle_led    = "toggleLED";
 const char *msg_toggle_CW     = "toggleCW";
 const char *msg_toggle_CCW    = "toggleCCW";
