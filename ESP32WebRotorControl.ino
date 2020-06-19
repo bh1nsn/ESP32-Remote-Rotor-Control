@@ -43,6 +43,7 @@
   Author:       Erik Schott - erik@pa0esh.com
 --------------------------------------------------------------*/
 #include <WiFi.h>
+#include <ESPmDNS.h>
 #include <SPIFFS.h>
 #include <ESPAsyncWebServer.h>
 #include <WebSocketsServer.h>
@@ -51,9 +52,9 @@
 
 
 
-const char *ssid_wl           = "xxxxxxxxxxxx";
+const char *ssid_wl           = "Kotona-Boven-2.4";
 const char *ssid_ap           = "Webrotor";
-const char *password          = "xxxxxxxxxxxx";
+const char *password          =  "Stt1951_mrs";
 const char *msg_toggle_led    = "toggleLED";
 const char *msg_toggle_CW     = "toggleCW";
 const char *msg_toggle_CCW    = "toggleCCW";
@@ -344,7 +345,15 @@ while (WiFi.status() != WL_CONNECTED) {
     Serial.println("Error mounting SPIFFS");
     while(1);
   }
- 
+  
+     if (!MDNS.begin("esp32")) {
+        Serial.println("Error setting up MDNS responder!");
+        while(1) {
+            delay(1000);
+        }
+    }
+    Serial.println("mDNS responder started");
+    
   // Start access point
   WiFi.softAP(ssid_ap, password);
  
@@ -378,7 +387,9 @@ while (WiFi.status() != WL_CONNECTED) {
  
   // Start web server
   server.begin();
- 
+
+ MDNS.addService("http", "tcp", 80);
+  
   // Start WebSocket server and assign callback
   webSocket.begin();
   webSocket.onEvent(onWebSocketEvent);
@@ -436,7 +447,7 @@ void emergency_stop(){
 void sent_bearing_ws(){
      // compare last & current value of bearing. Only sent new data if > 2 degrees.
     read_rotor_bearing();
-    if (analog_val < analog_val_old-1 || analog_val > analog_val_old +1 ) {
+    if (analog_val < analog_val_old-2 || analog_val > analog_val_old +2 ) {
               String rotor = String(analog_val);
               rotor = "Bearing :"+rotor,
               webSocket.broadcastTXT(rotor);
