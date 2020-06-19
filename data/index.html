@@ -9,14 +9,7 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
       <link rel="shortcut icon" href="">
   </head>
-    	<style>
-		.IO_box {
-			float: center;
-			margin: 0 20px 20px 0;
-			border: 1px solid blue;
-			padding: 0 5px 0 5px;
-			width: 300px;
-		}
+<style>
 		h1 {
 			font-size: 120%;
 			color: blue;
@@ -36,35 +29,11 @@
 			color: #737373;
 		}
 
-.button {
-  background-color: darkred; /* Green */
-  border: none;
-  color: white;
-  padding: 16px 32px;
-  text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  font-size: 16px;
-  margin: 4px 2px;
-  cursor: pointer;
-  -webkit-transition-duration: 0.4s; /* Safari */
-  transition-duration: 0.4s;
+.custom {
+    width: 140px !important;
 }
 
-.button1 {
-  box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
-}
 
-.button2:hover {
-  box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
-    
-}
-    .custom {
-    width: 190px !important;
-    font-stretch: semi-expanded;
-    font-family: 'Orbitron', sans-serif;"
-    font-size: 18px ! important; //to make fontsize bigger 
-}
 </style>
 <body>
  
@@ -78,8 +47,8 @@
     <script src="jquery.slim.min.js"></script> 
     <script src="gauge.min.js"></script>
     
-    
 <script language="javascript" type="text/javascript">
+ 
 // websocket connect info - define fuctip to obtain websocket ip on the fly
 var url = "ws://192.168.178.85:1337/";
 //var output;
@@ -88,9 +57,12 @@ var button_cw;
 var button_ccw;
 var context;
 
+    
+    
+
 // This is called when the page finishes loading
 function init() {
- 
+    
     // Assign page elements to variables
     button_brake = document.getElementById("button_brake");
     button_cw = document.getElementById("button_cw");
@@ -122,29 +94,21 @@ function onOpen(evt) {
  
     // Log connection state
      console.log("Connected");
-     chime();
-     document.getElementById("display").innerHTML = "connected to rotor";
+     //chime();
+     document.getElementById("display").innerHTML = "Rotor Initialising";
     // Get the current position from the rotor
      doSend("getBEARINGState");
-    //Get the current switch states from the rotor
-    var cw_status;
-    cw_status = document.getElementById("button_cw").innerHTML;
-    if (cw_status == "CW ON"){
-    doSend("toggleCW");
-    doSend("getCWState");
-    console.log("CW switch is switched to OFF");
-    }
-    var ccw_status;
-    ccw_status = document.getElementById("button_ccw").innerHTML;
-    if (ccw_status == "CCW ON"){
-    doSend("toggleCCW");
-    doSend("getCCWState");
-    console.log("CCW switch is switched to OFF");
-    }
+     doSend("getBRAKEState");
+     doSend("getCWState");
+     doSend("getCCWState");
+    
     //Enable the buttons
     button_brake.disabled = false;
     button_cw.disabled = false;
     button_ccw.disabled = false;
+    doSend("getBEARINGState");
+
+
 }
  
 // Called when the WebSocket connection is closed
@@ -152,7 +116,8 @@ function onClose(evt) {
  
     // Log disconnection state
     console.log("Disconnected");
-    chime();
+    document.getElementById("display").innerHTML = "Rotor disconnected, retrying";
+  
     
     // Disable button
     button_brake.disabled = true;
@@ -181,12 +146,15 @@ function onClose(evt) {
 function onMessage(evt) {
     // Print out our received message
     console.log("Received by the webpage: " + evt.data);
-    
-    var res = evt.data.substr(0, 9);
+     var res = evt.data.substr(0, 9);
     if (res == "Bearing :") {
+    document.getElementById("display").innerHTML = "Rotor online";  
     res = evt.data.substr(9, 3);
     //console.log("This is bearing data: " + res + " degrees");
-    gauge.value = res;    
+           gauge.update();
+    gauge.value = res; 
+    //gauge.animationDuration = 3500;
+ 
     }
     
     // Update circle graphic with LED state
@@ -348,7 +316,7 @@ window.addEventListener("load", init, false);
 
         
 <div class="container-fluid">
-    <div class="col-lg-12 text-center">
+    <div class="col-sm text-center">
          <br>
             <canvas  id="kompass"></canvas>
         <script>
@@ -401,7 +369,7 @@ window.addEventListener("load", init, false);
             valueBox: true,
             valueInt: 3,
             valueDec: 0,
-            animationDuration: 1500
+            animationDuration: 500
         }).draw();
         
         </script>
@@ -418,28 +386,29 @@ window.addEventListener("load", init, false);
 -->
         
 <div class="container-fluid">
-    <div class="col-lg-12 text-center">
-        <p id = "display">Not connected to Rotor</p>
-        <button type="button" class="button custom" id="button_cw" onclick="onPressButton(1)" disabled>CW OFF </button>
-        <button type="button" class="button custom" id="button_ccw" onclick="onPressButton(2)" disabled>CCW OFF</button>
+    <div class="row">
+        <div class="col-sm text-center">
+            <p id = "display">Not connected to Rotor</p>
+            <div class="span">
+                <div class=".btn-group-justified" role="group" aria-label="Basic example" style="padding-bottom: 15px;">
+                  <button type="button" class="btn btn-primary custom btn-lg" id="button_cw" onclick="onPressButton(1)">CW OFF</button>
+                  <button type="button" class="btn btn-primary custom btn-lg" id="button_ccw" onclick="onPressButton(2)">CCW OFF</button>
+                </div>
+            </div>
+         </div>
+    </div>
+        <div class="row" style="padding-bottom: 5px;">
+            <div class="col-sm text-center" id="my_styles">
+                 <div class="span">
+                <button type="button" class="btn btn-danger custom btn-lg " id="button_brake" onclick="onPressButton(3)">BRAKE OFF</button>
+                </div></div>
     </div>
 </div>
-         
-                <center>
-              
-                        <table>
-                         <tr>
-                             <button type="button" class="button custom" id="button_brake" onclick="onPressButton(3)" disabled>BRAKE OFF </button>
-                           
-                         </tr>
-                     </table>
-
-                    </center>
-
+ 
 
    <!-- Footer -->
     <footer id="sticky-footer" class="py-4 bg-dark text-white-50">
-        <div class="container text-center">
+        <div class="container text-center" >
         <small>GNU licence &copy; 2020 PA0ESH - V1.2</small>
         </div>
   </footer>
