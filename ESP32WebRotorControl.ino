@@ -51,9 +51,9 @@
 
 
 
-const char *ssid_wl           = "Kotona-Boven-2.4";
+const char *ssid_wl           = "xxxxxxxxxxxx";
 const char *ssid_ap           = "Webrotor";
-const char *password          =  "Stt1951_mrs";
+const char *password          = "xxxxxxxxxxxx";
 const char *msg_toggle_led    = "toggleLED";
 const char *msg_toggle_CW     = "toggleCW";
 const char *msg_toggle_CCW    = "toggleCCW";
@@ -286,7 +286,15 @@ void onJGRequest(AsyncWebServerRequest *request) {
                   "] HTTP GET request of " + request->url());
   request->send(SPIFFS, "/gauge.min.js", "application/javascript");
 }
- 
+
+// Callback: send javascript gauge meter
+void onMPRequest(AsyncWebServerRequest *request) {
+  IPAddress remote_ip = request->client()->remoteIP();
+  Serial.println("[" + remote_ip.toString() +
+                  "] HTTP GET request of " + request->url());
+  request->send(SPIFFS, "/connected.mp3", "application/javascript");
+}
+
 // Callback: send 404 if requested file does not exist
 void onPageNotFound(AsyncWebServerRequest *request) {
   IPAddress remote_ip = request->client()->remoteIP();
@@ -360,6 +368,10 @@ while (WiFi.status() != WL_CONNECTED) {
 
 // On HTTP request for gauge js
   server.on("/gauge.min.js", HTTP_GET, onJGRequest);
+
+// On HTTP request for connect.mp3 js
+  server.on("/connected.mp3", HTTP_GET, onMPRequest);
+
 
   // Handle requests for pages that do not exist
   server.onNotFound(onPageNotFound);
