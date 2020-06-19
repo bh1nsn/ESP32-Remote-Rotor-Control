@@ -47,8 +47,19 @@
     <script src="jquery.slim.min.js"></script> 
     <script src="gauge.min.js"></script>
     
+    
 <script language="javascript" type="text/javascript">
  
+       function showLoc() {
+  var oLocation = location, aLog = ["Property (Typeof): Value", "location (" + (typeof oLocation) + "): " + oLocation ];
+  for (var sProp in oLocation){
+  aLog.push(sProp + " (" + (typeof oLocation[sProp]) + "): " + (oLocation[sProp] || "n/a"));
+  }
+  alert(aLog.join("\n"));
+}
+
+    
+    
 // websocket connect info - define fuctip to obtain websocket ip on the fly
 var url = "ws://192.168.178.85:1337/";
 //var output;
@@ -68,15 +79,14 @@ function init() {
     button_cw = document.getElementById("button_cw");
     button_ccw = document.getElementById("button_ccw");
      // Connect to WebSocket server
-    wsConnect(url);
+    wsConnect();
 }
  
 // Call this to connect to the WebSocket server
-function wsConnect(url) {
-    
+function wsConnect() {
     // Connect to WebSocket server
-    websocket = new WebSocket(url);
-    // Assign callbacks
+    //websocket = new WebSocket(url);
+    websocket = new WebSocket(((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + ":1337");
     websocket.onopen = function(evt) { onOpen(evt) };
     websocket.onclose = function(evt) { onClose(evt) };
     websocket.onmessage = function(evt) { onMessage(evt) };
@@ -388,6 +398,7 @@ window.addEventListener("load", init, false);
 <div class="container-fluid">
     <div class="row">
         <div class="col-sm text-center">
+            <!--<button onclick="showLoc();">Show location properties</button> -->
             <p id = "display">Not connected to Rotor</p>
             <div class="span">
                 <div class=".btn-group-justified" role="group" aria-label="Basic example" style="padding-bottom: 15px;">
