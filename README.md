@@ -14,6 +14,10 @@ Create a directory called data in the root directory of the sketch
   -    /data/gauge.min.js
   -    /data/jquery.slim.min.js
   -    /data/index.html
+  -    /data/pic_bulbon.gif
+  -    /data/pic_bulboff.gif
+  -    /data/gears.jpg
+   
 
 A number of javascripts and css files are taken from the internet, so in case you like to have them locally because you are not connected to the internet, download them and put them in this data directory and change the index.html file accordingly.
 
