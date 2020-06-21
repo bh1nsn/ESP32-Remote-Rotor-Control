@@ -7,33 +7,20 @@
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
-      <link rel="shortcut icon" href="">
+    
   </head>
 <style>
-		h1 {
-			font-size: 120%;
-			color: blue;
-			margin: 0 0 10px 0;
-		}
-		h2 {
-			font-size: 85%;
-			color: #5734E6;
-			margin: 5px 0 5px 0;
-		}
-		p, form, button {
-			font-size: 80%;
-			color: #252525;
-		}
-		.small_text {
-			font-size: 70%;
-			color: #737373;
-		}
-
 .custom {
-    width: 140px !important;
+    width: 170px !important;
 }
 
-
+      
+.bg-cover {
+    background-attachment: static;
+    background-position: center;
+    background-repeat: repeat;
+    background-size: cover;
+}
 </style>
 <body>
  
@@ -41,25 +28,16 @@
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
     <link href='https://fonts.googleapis.com/css?family=Orbitron' rel='stylesheet' type='text/css'>
-    <script src="jquery.slim.min.js"></script> 
+    <!-- <script src="jquery.slim.min.js"></script> -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="gauge.min.js"></script>
     
     
 <script language="javascript" type="text/javascript">
- 
-       function showLoc() {
-  var oLocation = location, aLog = ["Property (Typeof): Value", "location (" + (typeof oLocation) + "): " + oLocation ];
-  for (var sProp in oLocation){
-  aLog.push(sProp + " (" + (typeof oLocation[sProp]) + "): " + (oLocation[sProp] || "n/a"));
-  }
-  alert(aLog.join("\n"));
-}
-
-    
-    
+       
 // websocket connect info - define fuctip to obtain websocket ip on the fly
 var url = "ws://192.168.178.85:1337/";
 //var output;
@@ -67,6 +45,8 @@ var button_brake;
 var button_cw;
 var button_ccw;
 var context;
+    
+var res;
 
     
     
@@ -80,24 +60,20 @@ function init() {
     button_ccw = document.getElementById("button_ccw");
      // Connect to WebSocket server
     wsConnect();
-}
+    
  
 // Call this to connect to the WebSocket server
 function wsConnect() {
     // Connect to WebSocket server
-    //websocket = new WebSocket(url);
-    websocket = new WebSocket(((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + ":1337");
+    websocket = new WebSocket(url);
+    //websocket = new WebSocket(((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + ":1337");
     websocket.onopen = function(evt) { onOpen(evt) };
     websocket.onclose = function(evt) { onClose(evt) };
     websocket.onmessage = function(evt) { onMessage(evt) };
     websocket.onerror = function(evt) { onError(evt) };
 }
  
-function chime(){
-    var audioElement = new Audio('connected.mp3');
-    audioElement.loop = false;
-    audioElement.play();
-} 
+
    
 // Called when a WebSocket connection is established with the server
 function onOpen(evt) {
@@ -107,7 +83,7 @@ function onOpen(evt) {
      //chime();
      document.getElementById("display").innerHTML = "Rotor Initialising";
     // Get the current position from the rotor
-     doSend("getBEARINGState");
+     doSend("getBEARINGState"); 
      doSend("getBRAKEState");
      doSend("getCWState");
      doSend("getCCWState");
@@ -116,7 +92,8 @@ function onOpen(evt) {
     button_brake.disabled = false;
     button_cw.disabled = false;
     button_ccw.disabled = false;
-    doSend("getBEARINGState");
+    document.getElementById("display").innerHTML = "Rotor receiving bearing data";
+}
 
 
 }
@@ -128,7 +105,6 @@ function onClose(evt) {
     console.log("Disconnected");
     document.getElementById("display").innerHTML = "Rotor disconnected, retrying";
   
-    
     // Disable button
     button_brake.disabled = true;
     button_cw.disabled = true;
@@ -149,39 +125,41 @@ function onClose(evt) {
     console.log("CCW switch is switched to OFF");
     }
     // Try to reconnect after a few seconds
-    setTimeout(function() { wsConnect(url) }, 20000);
+    setTimeout(function() { wsConnect(url) }, 2000);
 }
  
 // Called when a message is received from the server
 function onMessage(evt) {
-    // Print out our received message
-    console.log("Received by the webpage: " + evt.data);
-     var res = evt.data.substr(0, 9);
-    if (res == "Bearing :") {
-    document.getElementById("display").innerHTML = "Rotor online";  
-    res = evt.data.substr(9, 3);
-    //console.log("This is bearing data: " + res + " degrees");
-           gauge.update();
-    gauge.value = res; 
-    //gauge.animationDuration = 3500;
- 
-    }
+        // Print out our received message
+        console.log("Received by the webpage: " + evt.data);
+        // cinstruct the bearing value from the string received
+        res = evt.data.substr(0, 9);
+        if (res == "Bearing :") {
+        document.getElementById("display").innerHTML = "Rotor receiving bearing data";
+        res = evt.data.substr(9, 3);
+        //console.log("This is bearing data: " + res + " degrees");
+        
+        gauge.value = res; 
+        //gauge.animationduration + 50;
+        //gauge.animationDuration = 3500;
+
+        }
     
     // Update circle graphic with LED state
     switch(evt.data) {
-            case "0":
-            console.log("Brake is is switched to OFF");
-            document.getElementById("button_brake").innerHTML = "BRAKE OFF";
-            break;
+        case "0":
+            //console.log("Brake is is switched to OFF");
+            //document.getElementById("button_brake").innerHTML = "BRAKE OFF <img id='cw_image' src='pic_bulboff.gif' width='20' height='36'>";
+            //break;
         case "1":
-            console.log("Brake is is switched to ON");
-            document.getElementById("button_brake").innerHTML = "BRAKE ON";
-            break;
+            //console.log("Brake is is switched to ON");
+            //document.getElementById("button_brake").innerHTML = "BRAKE ON <img id='cw_image' src='pic_bulbon.gif' width='20' height='36'>";
+            //break;
  
 // CW switch
         case "2":
             console.log("CW switch is switched to OFF");
-            document.getElementById("button_cw").innerHTML = "CW OFF";
+            document.getElementById("button_cw").innerHTML = "CW OFF <img id='cw_image' src='pic_bulboff.gif' width='20' height='36'>";
             break;  
         case "3":
             // test if CCW is on
@@ -193,14 +171,14 @@ function onMessage(evt) {
             console.log("CCW switch is switched to OFF");
             }
              console.log("CW switch switched to ON");
-             document.getElementById("button_cw").innerHTML = "CW ON";
-             document.getElementById("button_ccw").innerHTML = "CCW OFF";
+             document.getElementById("button_cw").innerHTML = "CW ON <img id='cw_image' src='pic_bulbon.gif' width='20' height='36'>";
+             document.getElementById("button_ccw").innerHTML = "CCW OFF <img id='ccw_image' src='pic_bulboff.gif' width='20' height='36'>";
              break;
             
 // CCW switch            
         case "4":
             console.log("CCW switch is is switched to OFF");
-            document.getElementById("button_ccw").innerHTML = "CCW OFF";
+            document.getElementById("button_ccw").innerHTML = "CCW OFF<img id='ccw_image' src='pic_bulboff.gif' width='20' height='36'>";
             break;
         case "5":
             // test if CW is on
@@ -211,15 +189,16 @@ function onMessage(evt) {
             //doSend("getCWState");
             console.log("CW switch is switched to OFF");
             }
-            document.getElementById("button_ccw").innerHTML = "CCW ON";
-            document.getElementById("button_cw").innerHTML = "CW OFF";
+            document.getElementById("button_ccw").innerHTML = "CCW ON <img id='ccw_image' src='pic_bulbon.gif' width='20' height='36'>";
+            document.getElementById("button_cw").innerHTML = "CW OFF <img id='cw_image' src='pic_bulboff.gif' width='20' height='36'>";
             console.log("CCW switch switched to ON");
              break;
             
 // BRAKE switch
        case "6":
             console.log("Brake is switched to OFF");
-            document.getElementById("button_brake").innerHTML = "BRAKE OFF";
+            document.getElementById("button_brake").innerHTML = "BRAKE OFF <img id='brake_image' src='pic_bulboff.gif' width='20' height='36'>";
+            
             button_cw.disabled = false;
             button_ccw.disabled = false;
 
@@ -239,8 +218,10 @@ function onMessage(evt) {
             doSend("getCCWState");
             console.log("CCW switch is switched to OFF");
             }
-            console.log("Brake is is switched to ON");
-            document.getElementById("button_brake").innerHTML = "BRAKE ON";
+            console.log("Brake is is switched to ON");    
+            document.getElementById("button_brake").innerHTML = "BRAKE ON <img id='brake_image' src='pic_bulbon.gif' width='20' height='36'>";
+            document.getElementById("button_cw").innerHTML = "CW OFF <img id='cw_image' src='pic_bulboff.gif' width='20' height='36'>";
+            document.getElementById("button_ccw").innerHTML = "CCW OFF <img id='ccw_image' src='pic_bulboff.gif' width='20' height='36'>";
             button_cw.disabled = true;
             button_ccw.disabled = true;
             break;
@@ -276,6 +257,7 @@ function onPressButton(x) {
         case 3:
             doSend("toggleBRAKE");
             doSend("getBRAKEState");
+            
             break;
         default:
             break;
@@ -287,9 +269,8 @@ function onPressButton(x) {
          
 function GetRotorBearing()
 		{
-          doSend("getBEARINGstate"); 
+          doSend("getBEARINGState"); 
           console.log("BEARING value requested");
-          setTimeout('GetArduinoInputs()', 100);
 		}
 
                   
@@ -299,13 +280,13 @@ window.addEventListener("load", init, false);
  
 </script>
 
- 
+   <body>
     <div class="container-fluid">
-    <body>
+  
      <!-- Navigation -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark static-top">
     <div class="container-fluid">
-      <a class="navbar-brand" href="#">ESP32 Rotor Controller</a>
+      <a class="navbar-brand" href="#">Web Rotor Controller</a>
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -324,7 +305,8 @@ window.addEventListener("load", init, false);
     </div>
   </nav>    
 
-        
+<div class="container bg-cover" style="background-image: linear-gradient(to bottom, rgba(255,255,255,0.6) 0%,rgba(255,255,255,0.9) 100%), url(gears.jpg) " >
+    
 <div class="container-fluid">
     <div class="col-sm text-center">
          <br>
@@ -379,7 +361,7 @@ window.addEventListener("load", init, false);
             valueBox: true,
             valueInt: 3,
             valueDec: 0,
-            animationDuration: 500
+            animationDuration: 1000
         }).draw();
         
         </script>
@@ -394,7 +376,7 @@ window.addEventListener("load", init, false);
     </div>
 </div>
 -->
-        
+  
 <div class="container-fluid">
     <div class="row">
         <div class="col-sm text-center">
@@ -402,8 +384,8 @@ window.addEventListener("load", init, false);
             <p id = "display">Not connected to Rotor</p>
             <div class="span">
                 <div class=".btn-group-justified" role="group" aria-label="Basic example" style="padding-bottom: 15px;">
-                  <button type="button" class="btn btn-primary custom btn-lg" id="button_cw" onclick="onPressButton(1)">CW OFF</button>
-                  <button type="button" class="btn btn-primary custom btn-lg" id="button_ccw" onclick="onPressButton(2)">CCW OFF</button>
+                  <button type="button" class="btn btn-primary custom btn-lg" id="button_cw" onclick="onPressButton(1)">CW OFF <img id="cw_image" src="pic_bulboff.gif" width="20" height="36"></button>
+                  <button type="button" class="btn btn-primary custom btn-lg" id="button_ccw" onclick="onPressButton(2)">CCW OFF<img id="ccw_image" src="pic_bulboff.gif" width="20" height="36"></button>
                 </div>
             </div>
          </div>
@@ -411,17 +393,61 @@ window.addEventListener("load", init, false);
         <div class="row" style="padding-bottom: 5px;">
             <div class="col-sm text-center" id="my_styles">
                  <div class="span">
-                <button type="button" class="btn btn-danger custom btn-lg " id="button_brake" onclick="onPressButton(3)">BRAKE OFF</button>
-                </div></div>
-    </div>
+                <button type="button" class="btn btn-danger custom btn-lg " id="button_brake" onclick="onPressButton(3)">BRAKE OFF <img id="brake_image" src="pic_bulboff.gif" width="20" height="36"></button>             
+                </div>
+            </div>
+            
+         </div>
+    
+
+  
+
+
 </div>
- 
+</div>
+        
 
    <!-- Footer -->
     <footer id="sticky-footer" class="py-4 bg-dark text-white-50">
         <div class="container text-center" >
-        <small>GNU licence &copy; 2020 PA0ESH - V1.2</small>
+        <small>GNU licence &copy; 2020 PA0ESH - V1.3</small>
         </div>
   </footer>
+        
+<script>
+var x = document.getElementById("demo");
+
+function getLocation() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(showPosition, showError);
+  } else { 
+    x.innerHTML = "Geolocation is not supported by this browser.";
+  }
+}
+
+function showPosition(position) {
+  x.innerHTML = "Latitude: " + position.coords.latitude + 
+  "<br>Longitude: " + position.coords.longitude;
+}
+
+function showError(error) {
+  switch(error.code) {
+    case error.PERMISSION_DENIED:
+      x.innerHTML = "User denied the request for Geolocation."
+      break;
+    case error.POSITION_UNAVAILABLE:
+      x.innerHTML = "Location information is unavailable."
+      break;
+    case error.TIMEOUT:
+      x.innerHTML = "The request to get user location timed out."
+      break;
+    case error.UNKNOWN_ERROR:
+      x.innerHTML = "An unknown error occurred."
+      break;
+  }
+}
+</script>
+
+
     </body>
 </html>
