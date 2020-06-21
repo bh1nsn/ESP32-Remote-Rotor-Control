@@ -142,7 +142,8 @@ function onMessage(evt) {
         gauge.value = res; 
         endstop = gauge.value;
         //gauge.animationduration + 50;
-        //gauge.animationDuration = 3500;
+        gauge.animationDuration = 1500;
+        gauge.draw();
 
         }
     
@@ -250,7 +251,7 @@ function onPressButton(x) {
         case 1:
                 if (endstop > 358) {
                 console.log("Going CW with rotorvalue: " + endstop);
-                document.getElementById("display").innerHTML = "CW Endstop reached.";
+                document.getElementById("display").innerHTML = "CW Endstop reached!";
                 } else {
                 document.getElementById("display").innerHTML = "Rotor receiving bearing data";
                 doSend("toggleCW");
@@ -260,7 +261,7 @@ function onPressButton(x) {
         case 2:
             if (endstop <= 2) {
                console.log("Going CCW with rotorvalue: " + endstop);
-                document.getElementById("display").innerHTML = "CCW endstop reached :";
+                document.getElementById("display").innerHTML = "CCW endstop reached!";
             } else {
                 document.getElementById("display").innerHTML = "Rotor receiving bearing data";
                 doSend("toggleCCW");
@@ -397,8 +398,9 @@ window.addEventListener("load", init, false);
             <p id = "display">Not connected to Rotor</p>
             <div class="span">
                 <div class=".btn-group-justified" role="group" aria-label="Basic example" style="padding-bottom: 15px;">
-                  <button type="button" class="btn btn-primary custom btn-lg" id="button_cw" onclick="onPressButton(1)">CW OFF <img id="cw_image" src="pic_bulboff.gif" width="20" height="36"></button>
+                  
                   <button type="button" class="btn btn-primary custom btn-lg" id="button_ccw" onclick="onPressButton(2)">CCW OFF<img id="ccw_image" src="pic_bulboff.gif" width="20" height="36"></button>
+                    <button type="button" class="btn btn-primary custom btn-lg" id="button_cw" onclick="onPressButton(1)">CW OFF <img id="cw_image" src="pic_bulboff.gif" width="20" height="36"></button>
                 </div>
             </div>
          </div>
