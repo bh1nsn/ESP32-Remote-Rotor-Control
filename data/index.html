@@ -45,7 +45,7 @@ var button_brake;
 var button_cw;
 var button_ccw;
 var context;
-    
+var endstop;
 var res;
 
     
@@ -140,6 +140,7 @@ function onMessage(evt) {
         //console.log("This is bearing data: " + res + " degrees");
         
         gauge.value = res; 
+        endstop = gauge.value;
         //gauge.animationduration + 50;
         //gauge.animationDuration = 3500;
 
@@ -247,13 +248,25 @@ function doSend(message) {
 function onPressButton(x) {
     switch(x){
         case 1:
-            doSend("toggleCW");
-            doSend("getCWState");
+                if (endstop > 358) {
+                console.log("Going CW with rotorvalue: " + endstop);
+                document.getElementById("display").innerHTML = "CW Endstop reached.";
+                } else {
+                document.getElementById("display").innerHTML = "Rotor receiving bearing data";
+                doSend("toggleCW");
+                doSend("getCWState");
+                }
             break;
         case 2:
-            doSend("toggleCCW");
-            doSend("getCCWState");
-            break;
+            if (endstop <= 2) {
+               console.log("Going CCW with rotorvalue: " + endstop);
+                document.getElementById("display").innerHTML = "CCW endstop reached :";
+            } else {
+                document.getElementById("display").innerHTML = "Rotor receiving bearing data";
+                doSend("toggleCCW");
+                doSend("getCCWState");
+            }
+             break;
         case 3:
             doSend("toggleBRAKE");
             doSend("getBRAKEState");
