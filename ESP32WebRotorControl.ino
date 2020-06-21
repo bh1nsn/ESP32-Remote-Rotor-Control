@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------
- * WiFI Rotor Controller - Version 1.2
+ * WiFI Rotor Controller - Version 1.3
 
   Description:  ESP32 server in combination with ajax calls
                 realizes an app which constantly show the bearing
@@ -13,21 +13,25 @@
                 The software does not maintain the position
                 of the antenna. Once you stop the rotor, that is it.
   
-  Hardware:     ESP32 Wrover board. Should also work with other ESP8266
-                boards. To be investigated
+  Hardware:     ESP32 Wrover board. Should also work with ESP8266
+                boards but needs to refine the pins as well as certain libraries. To be investigated
+                
                 Used in & outputs
+                
                 Aanalogue Input - to read rotor potentimeter value (use 3 wires)
                 34  GPIO36 (ADC1_6 pin 34) Max Voltage is 3.3V - check the calibration !!!!!
                 
                 Digital inputs
                 35  Digital input 1  : Free
-                32  Digital input 2  : Free  (is also Led_pin var)
+                32  Digital input 2  : Free 
                 33  Digital input 3  : Free
                 25  Digital input 4  : Free
+
+                Outputs
                 26  Digital output 1 : CW relais
                 27  Digital output 1 : CCW relais
                 14  Digital output 1 : BRAKE relais
-                12  Digital output 1 : free
+                12  Digital output 1 : Free
                 Relays: Jotta SSR-25 da
                 
   Software:     Developed using Arduino 1.8.12 software
@@ -38,7 +42,7 @@
                 page called /index.htmL and some css and js files
                 Use ESP32 Tool to upload File system contents via Arduino IDE.
                 
-  Date:         19-06-2020
+  Date:         21-06-2020
  
   Author:       Erik Schott - erik@pa0esh.com
 --------------------------------------------------------------*/
@@ -47,14 +51,16 @@
 #include <SPIFFS.h>
 #include <ESPAsyncWebServer.h>
 #include <WebSocketsServer.h>
+#include <Update.h>
+
 
 // Constants
 
-
-
-const char *ssid_wl           = "xxxxxxxxxx";
+const char* host = "webrotor";
+const char *default_instance  = "Web Rotor Controller by PA0ESH";
+const char *ssid_wl           = "Kotona-Boven-2.4";
 const char *ssid_ap           = "Webrotor";
-const char *password          = "xxxxxxxxxx";
+const char *password          =  "Stt1951_mrs";
 const char *msg_toggle_led    = "toggleLED";
 const char *msg_toggle_CW     = "toggleCW";
 const char *msg_toggle_CCW    = "toggleCCW";
@@ -62,9 +68,7 @@ const char *msg_toggle_Brake  = "toggleBRAKE";
 const char *msg_get_led       = "getLEDState";
 const char *msg_get_CW        = "getCWState";
 const char *msg_get_CCW       = "getCCWState";
-const char *msg_get_Brak     = "getBRAKEState";
-
-
+const char *msg_get_Brak      = "getBRAKEState";
 
 const int dns_port  = 53;
 const int http_port = 80;
@@ -77,7 +81,6 @@ const int brake_pin   = 14;  // connect your brake relais between GND and this p
 const int spare_pin   = 12;  // connect your spare relais between GND and this pin
 const int analog_pin  = 34;  // connect your spare relais between GND and this pin
 
-
 int led_state     = 0;
 int cw_state      = 0;
 int ccw_state     = 0;
@@ -86,10 +89,8 @@ int stop_state    = 0;
 int analog_val    = 0;
 int analog_val_old = 0;
 
-
 boolean LED_state[4] = {0};       // stores the states of the LEDs
 
- 
 // Globals
 
 char msg_buf[10];
@@ -105,8 +106,6 @@ WebSocketsServer webSocket = WebSocketsServer(1337);
 /***********************************************************
  * Functions
  */
-
-
 
 // Callback: receiving any WebSocket message
 void onWebSocketEvent(uint8_t client_num,
@@ -229,8 +228,6 @@ void onWebSocketEvent(uint8_t client_num,
         rotor = "Bearing :"+rotor,
         webSocket.broadcastTXT( rotor);
         
-
-        
         // Report the state of the BRAKE button
       } else if ( strcmp((char *)payload, "getBRAKEState") == 0 ) {
         sprintf(msg_buf, "%d", brake_state+6);
@@ -296,6 +293,31 @@ void onMPRequest(AsyncWebServerRequest *request) {
   request->send(SPIFFS, "/connected.mp3", "application/javascript");
 }
 
+// Callback: send bulbon and off
+void onGIFONRequest(AsyncWebServerRequest *request) {
+  IPAddress remote_ip = request->client()->remoteIP();
+  Serial.println("[" + remote_ip.toString() +
+                  "] HTTP GET request of " + request->url());
+  request->send(SPIFFS, "/pic_bulbon.gif", "text/plain");
+}
+
+// Callback: send bulbon and off
+void onGIFOFFRequest(AsyncWebServerRequest *request) {
+  IPAddress remote_ip = request->client()->remoteIP();
+  Serial.println("[" + remote_ip.toString() +
+                  "] HTTP GET request of " + request->url());
+  request->send(SPIFFS, "/pic_bulboff.gif", "text/plain");
+}
+
+// Callback: send bg pic
+void onJPGRequest(AsyncWebServerRequest *request) {
+  IPAddress remote_ip = request->client()->remoteIP();
+  Serial.println("[" + remote_ip.toString() +
+                  "] HTTP GET request of " + request->url());
+  request->send(SPIFFS, "/gears.jpg", "text/plain");
+}
+
+
 // Callback: send 404 if requested file does not exist
 void onPageNotFound(AsyncWebServerRequest *request) {
   IPAddress remote_ip = request->client()->remoteIP();
@@ -346,13 +368,13 @@ while (WiFi.status() != WL_CONNECTED) {
     while(1);
   }
   
-     if (!MDNS.begin("esp32")) {
+  if (!MDNS.begin("webrotor")) {
         Serial.println("Error setting up MDNS responder!");
-        while(1) {
-            delay(1000);
+     while(1) {
+     delay(1000);
         }
     }
-    Serial.println("mDNS responder started");
+  Serial.println("mDNS responder started with http://webrotor.local");
     
   // Start access point
   WiFi.softAP(ssid_ap, password);
@@ -362,8 +384,6 @@ while (WiFi.status() != WL_CONNECTED) {
   Serial.println("AP running");
   Serial.print("My IP address: ");
   Serial.println(WiFi.softAPIP());
-
-
  
   // On HTTP request for root, provide index.html file
   server.on("/", HTTP_GET, onIndexRequest);
@@ -381,6 +401,14 @@ while (WiFi.status() != WL_CONNECTED) {
 // On HTTP request for connect.mp3 js
   server.on("/connected.mp3", HTTP_GET, onMPRequest);
 
+  // On HTTP request for bulbon.gif 
+  server.on("/pic_bulbon.gif", HTTP_GET, onGIFONRequest);
+
+  // On HTTP request for bulboff.gif
+  server.on("/pic_bulboff.gif", HTTP_GET, onGIFOFFRequest);
+
+// On HTTP request for bulboff.gif
+  server.on("/gears.jpg", HTTP_GET, onJPGRequest);
 
   // Handle requests for pages that do not exist
   server.onNotFound(onPageNotFound);
@@ -397,35 +425,6 @@ while (WiFi.status() != WL_CONNECTED) {
 }
 
 // Rotor bearing values taken from 500 ohm potentiometer - middle pin connects to 34
-String xmlResponse()
-{
-    String res = "";                    // String to assemble XML response values
-    int analog_val;                     // stores value read from analog inputs
-     
-    res += "<?xml version = \"1.0\" ?>\n";
-    res +="<inputs>\n";
-    // read analog input
-    // ESP32 has many Analog inputs (ADC1 - do not use ADC2). It's 12bit (4096 values) Measuring range is 0-3.3V. Beginning and endingis not lineair.
-    // use 2 resistors opr potentiometers to calibrate the hardware.
-        analog_val = analogRead(analog_pin);   
-        analog_val = map(analog_val,4,4096,0,360);  // here is wehere you convert from voltage rotor into degrees
-        Serial.println("reading pin 34 as : ");   // then adapt the map values accordingly.
-        Serial.print (analog_val);
-  
-        res += "<analog>";
-        res += String(analog_val);
-        res += "</analog>\n";
-    // read switches
-    res += "</inputs>";
-    return res;
-}
-
-void ajaxInputs() {
-  //server.sendHeader("Connection", "close");                         // Headers to free connection ASAP and 
-  //server.sendHeader("Cache-Control", "no-store, must-revalidate");  // Don't cache response
-  //server.send(200, "text/xml", xmlResponse());                      // Send string from xmlResponse() as XML document to cliend.
-                                                                    // 200 - means Success html result code
-}
 
 void read_rotor_bearing(){
       analog_val = analogRead(analog_pin);   
@@ -435,18 +434,37 @@ void read_rotor_bearing(){
 
 
 void emergency_stop(){
+  Serial.print("Testing the STOP Rotor bearing is :");
+  Serial.println(analog_val); 
     if (analog_val < 2 ) {
-    cw_state = 0;
-    digitalWrite(cw_pin, cw_state);
-    } else if (analog_val > 358 ) {
+       Serial.print("CCW STOP value is:");
+       Serial.println(analog_val); 
+        String rotor = String(4);
+        //rotor = "STOP CCW :"+rotor,
+   
     ccw_state = 0;
     digitalWrite(ccw_pin, ccw_state);
+        webSocket.broadcastTXT(rotor);
+    delay(500);
+
+    } else if (analog_val > 358 ) {
+        Serial.print("CW STOP value is :");
+        Serial.println(analog_val); 
+          String rotor = String(2);
+        //rotor = "Stop CW :"+rotor,
+        cw_state = 0;
+    digitalWrite(cw_pin, cw_state);
+        webSocket.broadcastTXT(rotor);
+    delay(500);
+
+
     }
 }
 
 void sent_bearing_ws(){
      // compare last & current value of bearing. Only sent new data if > 2 degrees.
     read_rotor_bearing();
+
     if (analog_val < analog_val_old-2 || analog_val > analog_val_old +2 ) {
               String rotor = String(analog_val);
               rotor = "Bearing :"+rotor,
@@ -456,12 +474,16 @@ void sent_bearing_ws(){
               //Serial.print("Previous Rotor bearing is :");
               //Serial.println(analog_val_old);  
               analog_val_old = analog_val;
+              if (cw_state ==1 ||ccw_state ==1){
+              emergency_stop();
+              }
   }
 }
+
+//The main loop
 void loop() {
   // Look for and handle WebSocket data
   webSocket.loop();
   sent_bearing_ws();
-  emergency_stop();
-  delay(200);
+  delay(600);  // experimental value, may be incresed or lowered depending on results of page loading and data changes.
 }
