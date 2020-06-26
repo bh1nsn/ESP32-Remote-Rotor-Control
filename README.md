@@ -17,7 +17,7 @@ Switches are showing sinners, indication the rotor is turning. They are not (yet
 In case you have a rotor brake and apply this break, first any turning is stopped and then the brake is applied. From then on you cannot switch CW or CCW on, until the brake is released.
 
 
-Compass indicator
+# Compass indicator
 
 Every rotor to be used should have a build in potentiometer of approx. 500 Ohm.
 Connect one side to GND and the other side to the 3.3V of the ESP32. Connect the middle pin to pin 34 of the ESP32.
@@ -27,7 +27,7 @@ Since the ADC is not 100% linear, you may have to put some small resistors from 
 A small capacitor of 1nF helps to remove some noise but you may experiment with other values. Currently I have a 1 nF and a 10uF in parallel connected to pun 34 (the ADC channels used for the bearing)
 The algorithm for the compass is looking for changes more than 2 degrees, before the compass is turning. Every 60 seconds, the real value is also sent, so drifting in the wind will result in the compass rose slowly following.
 
-In the making:
+# In the making:
 
 - Sending output values to the serial port for connection to other smart rotors.
 - interface with ham radio like programmes.
