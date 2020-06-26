@@ -10,17 +10,73 @@
     
   </head>
 <style>
-.custom {
-    width: 170px !important;
+    /*
+*
+* ==========================================
+* CUSTOM UTIL CLASSES
+* ==========================================
+*
+*/
+
+     .btn:focus {
+  outline: none;
+  box-shadow: none;
+}
+  
+  .custom {
+    width: 160px !important;
+      margin-bottom: 10px !important;
+       margin-top: 10px !important;
+}
+  
+   .custom1 {
+    width: 190px !important;
+     margin-bottom: 10px;
+       margin-top: 10px;
 }
 
-      
-.bg-cover {
-    background-attachment: static;
-    background-position: center;
-    background-repeat: repeat;
-    background-size: cover;
+  .jumbotron{
+    margin-bottom: 0;
+  }
+    
+    html,body{
+  width:100%;
+  height:100%;
+  margin:0;
+  padding:0:
 }
+.navbar{
+  width:100%;
+  margin:0;
+  padding:0;
+  background-color:green;
+  height:50px;
+}
+.imageH{
+  width:100%;
+  margin:0;
+  padding:0;
+  background-image:url("europe.jpg");
+  background-size:cover;
+  background-position:center;
+  height:calc(100vh - 50px);
+}
+    
+    <style>
+
+.footer {
+position: fixed;
+height: 60px;
+bottom: 0;
+width: 100%;
+background-color: #f5f5f5;
+}
+.alert {
+ display:inline-block;
+    font-size: 10px;
+
+}
+    
 </style>
 <body>
  
@@ -46,10 +102,25 @@ var button_cw;
 var button_ccw;
 var context;
 var endstop;
+    
 var res;
 
     
-    
+function mouseDown_cw() {
+ //document.getElementById("button_cw").innerHTML = "CW ON";
+}
+
+function mouseUp_cw() {
+ document.getElementById("button_cw").innerHTML = "CW OFF";
+}
+function mouseDown_ccw() {
+ document.getElementById("button_ccw").innerHTML = "CW ON";
+}
+
+function mouseUp_ccw() {
+ document.getElementById("button_ccw").innerHTML = "CW OFF";
+}
+
 
 // This is called when the page finishes loading
 function init() {
@@ -104,7 +175,6 @@ function onClose(evt) {
     // Log disconnection state
     console.log("Disconnected");
     document.getElementById("display").innerHTML = "Rotor disconnected, retrying";
-  
     // Disable button
     button_brake.disabled = true;
     button_cw.disabled = true;
@@ -125,7 +195,7 @@ function onClose(evt) {
     console.log("CCW switch is switched to OFF");
     }
     // Try to reconnect after a few seconds
-    setTimeout(function() { wsConnect(url) }, 2000);
+    setTimeout(function() { wsConnect(url) }, 1000);
 }
  
 // Called when a message is received from the server
@@ -149,81 +219,63 @@ function onMessage(evt) {
     
     // Update circle graphic with LED state
     switch(evt.data) {
+// Spare switch or LED
         case "0":
-            //console.log("Brake is is switched to OFF");
-            //document.getElementById("button_brake").innerHTML = "BRAKE OFF <img id='cw_image' src='pic_bulboff.gif' width='20' height='36'>";
-            //break;
+        //
         case "1":
-            //console.log("Brake is is switched to ON");
-            //document.getElementById("button_brake").innerHTML = "BRAKE ON <img id='cw_image' src='pic_bulbon.gif' width='20' height='36'>";
-            //break;
- 
+        //
+            
 // CW switch
         case "2":
             console.log("CW switch is switched to OFF");
-            document.getElementById("button_cw").innerHTML = "CW OFF <img id='cw_image' src='pic_bulboff.gif' width='20' height='36'>";
+            document.getElementById("button_cw").innerHTML='CW OFF<span class="" role="status" aria-hidden="true"></span>'; 
             break;  
         case "3":
-            // test if CCW is on
-            var ccw_status;
-            ccw_status = document.getElementById("button_ccw").innerHTML;
-            if (ccw_status == "CCW ON"){
-            //doSend("toggleCCW");
-            //doSend("getCCWState");
-            console.log("CCW switch is switched to OFF");
-            }
-             console.log("CW switch switched to ON");
-             document.getElementById("button_cw").innerHTML = "CW ON <img id='cw_image' src='pic_bulbon.gif' width='20' height='36'>";
-             document.getElementById("button_ccw").innerHTML = "CCW OFF <img id='ccw_image' src='pic_bulboff.gif' width='20' height='36'>";
+            console.log("CW switch is switched to ON");
+            document.getElementById("button_ccw").innerHTML='CCW OFF<span class="s" role="status" aria-hidden="true"></span>';
+
+            document.getElementById("button_cw").innerHTML='CW ON<span class="spinner-border spinner-border" role="status" aria-hidden="true"></span>';
              break;
             
 // CCW switch            
         case "4":
             console.log("CCW switch is is switched to OFF");
-            document.getElementById("button_ccw").innerHTML = "CCW OFF<img id='ccw_image' src='pic_bulboff.gif' width='20' height='36'>";
-            break;
+               document.getElementById("button_ccw").innerHTML='CCW OFF<span class="" role="status" aria-hidden="true"></span>'; 
+            break;  
+  
         case "5":
-            // test if CW is on
-            var cw_status;
-            cw_status = document.getElementById("button_cw").innerHTML;
-            if (cw_status == "CW ON"){
-            //doSend("toggleCW");
-            //doSend("getCWState");
-            console.log("CW switch is switched to OFF");
-            }
-            document.getElementById("button_ccw").innerHTML = "CCW ON <img id='ccw_image' src='pic_bulbon.gif' width='20' height='36'>";
-            document.getElementById("button_cw").innerHTML = "CW OFF <img id='cw_image' src='pic_bulboff.gif' width='20' height='36'>";
-            console.log("CCW switch switched to ON");
-             break;
-            
+            console.log("CCW switch is switched to ON");
+            document.getElementById("button_cw").innerHTML='CW OFF<span class="s" role="status" aria-hidden="true"></span>';
+            document.getElementById("button_ccw").innerHTML='CCW ON<span class="spinner-border spinner-border" role="status" aria-hidden="true"></span>';
+            break;
+   
+
 // BRAKE switch
        case "6":
             console.log("Brake is switched to OFF");
-            document.getElementById("button_brake").innerHTML = "BRAKE OFF <img id='brake_image' src='pic_bulboff.gif' width='20' height='36'>";
-            
+            document.getElementById("button_brake").innerHTML = "BRAKE OFF";
             button_cw.disabled = false;
             button_ccw.disabled = false;
-
-             break;
+            break;
         case "7":
             var cw_status;
-            cw_status = document.getElementById("button_cw").innerHTML;
+            cw_status = document.getElementById("button_cw").innerText;
             if (cw_status == "CW ON"){
             doSend("toggleCW");
             doSend("getCWState");
             console.log("CW switch is switched to OFF");
+            document.getElementById("button_cw").innerHTML='CW OFF<span class="s" role="status" aria-hidden="true"></span>'   
             }
             var ccw_status;
-            ccw_status = document.getElementById("button_ccw").innerHTML;
+            ccw_status = document.getElementById("button_ccw").innerText;
             if (ccw_status == "CCW ON"){
             doSend("toggleCCW");
             doSend("getCCWState");
             console.log("CCW switch is switched to OFF");
+            document.getElementById("button_ccw").innerHTML='CCW OFF;';
             }
             console.log("Brake is is switched to ON");    
-            document.getElementById("button_brake").innerHTML = "BRAKE ON <img id='brake_image' src='pic_bulbon.gif' width='20' height='36'>";
-            document.getElementById("button_cw").innerHTML = "CW OFF <img id='cw_image' src='pic_bulboff.gif' width='20' height='36'>";
-            document.getElementById("button_ccw").innerHTML = "CCW OFF <img id='ccw_image' src='pic_bulboff.gif' width='20' height='36'>";
+            document.getElementById("button_brake").innerHTML = "BRAKE ON";
             button_cw.disabled = true;
             button_ccw.disabled = true;
             break;
@@ -273,6 +325,23 @@ function onPressButton(x) {
             doSend("getBRAKEState");
             
             break;
+       case 4:
+            var rot_sw = document.getElementById("button_test").innerText;
+            console.log("Status Test switch is :"+rot_sw);
+            switch (rot_sw) {
+                case "CCW OFF":
+                    document.getElementById("button_test").innerHTML='CCW ON <span class="spinner-border spinner-border" role="status" aria-hidden="true"></span>'; 
+                    break;
+                    
+                case "CCW ON ":
+                    document.getElementById("button_test").innerHTML='CCW OFF'; 
+                    break;
+                default:fgig
+                    break;       
+            }
+            
+                
+            break;
         default:
             break;
             
@@ -294,141 +363,139 @@ window.addEventListener("load", init, false);
  
 </script>
 
-   <body>
-    <div class="container-fluid">
-  
-     <!-- Navigation -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark static-top">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="#">Web Rotor Controller</a>
-      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarResponsive">
-        <ul class="navbar-nav ml-auto">
-          <li class="nav-item active">
-            <a class="nav-link" href="#">Home
-              <span class="sr-only">(current)</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="">WiFi Switch</a>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </nav>    
-
-<div class="container bg-cover" style="background-image: linear-gradient(to bottom, rgba(255,255,255,0.6) 0%,rgba(255,255,255,0.9) 100%), url(gears.jpg) " >
-    
-<div class="container-fluid">
-    <div class="col-sm text-center">
-         <br>
-            <canvas  id="kompass"></canvas>
-        <script>
-            var gauge = new RadialGauge({
-            renderTo: 'kompass',
-            height:250,
-            minValue: 0,
-            maxValue: 360,
-            majorTicks: [
-                "N",
-                "NO",
-                "O",
-                "ZO",
-                "Z",
-                "ZW",
-                "W",
-                "NW",
-                "N"
-            ],
-            minorTicks: 22,
-            ticksAngle: 360,
-            startAngle: 180,
-            strokeTicks: false,
-            highlights: false,
-            colorPlate: "#222",
-            colorMajorTicks: "#f5f5f5",
-            colorMinorTicks: "#ddd",
-            colorNumbers: "#ccc",
-            colorNeedle: "rgba(240, 128, 128, 1)",
-            colorNeedleEnd: "rgba(255, 160, 122, .9)",
-            valueBox: false,
-            valueTextShadow: false,
-            colorCircleInner: "red",
-            colorNeedleCircleInner: "grey",
-            needleCircleSize: 15,
-            needleCircleOuter: false,
-            animationRule: "linear",
-            needleType: "arrow",
-            needleStart: 5,
-            needleEnd: 99,
-            needleWidth: 3,
-            borders: true,
-            borderInnerWidth: 0,
-            borderMiddleWidth: 0,
-            borderOuterWidth: 10,
-            colorBorderOuter: "#ccc",
-            colorBorderOuterEnd: "#ccc",
-            colorNeedleShadowDown: "#222",
-            borderShadowWidth: 0,
-            valueBox: true,
-            valueInt: 3,
-            valueDec: 0,
-            animationDuration: 1000
-        }).draw();
-        
-        </script>
-
-    </div>
-</div>
-<!-- You can out the bearing in numbers here
-<div class="container-fluid">   
-    <div class="col-lg-12 text-center">
-            <h4 class="mt-5">Bearing waarde 1</h4>
-            <div class="analog">...</div>
-    </div>
-</div>
--->
-  
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-sm text-center">
-            <!--<button onclick="showLoc();">Show location properties</button> -->
-            <p id = "display">Not connected to Rotor</p>
-            <div class="span">
-                <div class=".btn-group-justified" role="group" aria-label="Basic example" style="padding-bottom: 15px;">
-                  
-                  <button type="button" class="btn btn-primary custom btn-lg" id="button_ccw" onclick="onPressButton(2)">CCW OFF<img id="ccw_image" src="pic_bulboff.gif" width="20" height="36"></button>
-                    <button type="button" class="btn btn-primary custom btn-lg" id="button_cw" onclick="onPressButton(1)">CW OFF <img id="cw_image" src="pic_bulboff.gif" width="20" height="36"></button>
-                </div>
-            </div>
-         </div>
-    </div>
-        <div class="row" style="padding-bottom: 5px;">
-            <div class="col-sm text-center" id="my_styles">
-                 <div class="span">
-                <button type="button" class="btn btn-danger custom btn-lg " id="button_brake" onclick="onPressButton(3)">BRAKE OFF <img id="brake_image" src="pic_bulboff.gif" width="20" height="36"></button>             
-                </div>
-            </div>
-            
-         </div>
-    
+<body>
 
   
-
-
-</div>
-</div>
-        
-
-   <!-- Footer -->
-    <footer id="sticky-footer" class="py-4 bg-dark text-white-50">
-        <div class="container text-center" >
-        <small>GNU licence &copy; 2020 PA0ESH - V1.3</small>
+         <!-- Navigation -->
+      <nav class="navbar navbar-expand-lg navbar-dark bg-dark static-top">
+        <div class="container-fluid">
+          <a class="navbar-brand" href="#">Web Rotor Controller</a>
+          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarResponsive">
+            <ul class="navbar-nav ml-auto">
+              <li class="nav-item active">
+                <a class="nav-link" href="#">Home
+                  <span class="sr-only">(current)</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="">WiFi Switch</a>
+              </li>
+            </ul>
+          </div>
         </div>
-  </footer>
+      </nav>    
+<div class="imageH">
+    <div class="container" >
+
+    <div class="container-fluid">
+        <div class="col-sm text-center">
+             <br>
+                <canvas  id="kompass"></canvas>
+            <script>
+                var gauge = new RadialGauge({
+                renderTo: 'kompass',
+                height:250,
+                minValue: 0,
+                maxValue: 360,
+                majorTicks: [
+                    "N",
+                    "NO",
+                    "O",
+                    "ZO",
+                    "Z",
+                    "ZW",
+                    "W",
+                    "NW",
+                    "N"
+                ],
+                minorTicks: 22,
+                ticksAngle: 360,
+                startAngle: 180,
+                strokeTicks: false,
+                highlights: false,
+                colorPlate: "#222",
+                colorMajorTicks: "#f5f5f5",
+                colorMinorTicks: "#ddd",
+                colorNumbers: "#ccc",
+                colorNeedle: "rgba(240, 128, 128, 1)",
+                colorNeedleEnd: "rgba(255, 160, 122, .9)",
+                valueBox: false,
+                valueTextShadow: false,
+                colorCircleInner: "red",
+                colorNeedleCircleInner: "grey",
+                needleCircleSize: 15,
+                needleCircleOuter: false,
+                animationRule: "linear",
+                needleType: "arrow",
+                needleStart: 5,
+                needleEnd: 99,
+                needleWidth: 3,
+                borders: true,
+                borderInnerWidth: 0,
+                borderMiddleWidth: 0,
+                borderOuterWidth: 10,
+                colorBorderOuter: "#ccc",
+                colorBorderOuterEnd: "#ccc",
+                colorNeedleShadowDown: "#222",
+                borderShadowWidth: 0,
+                valueBox: true,
+                valueInt: 3,
+                valueDec: 0,
+                animationDuration: 1000
+            }).draw();
+
+            </script>
+
+        </div>
+    </div>
+    <!-- You can out the bearing in numbers here
+    <div class="container-fluid">   
+        <div class="col-lg-12 text-center">
+                <h4 class="mt-5">Bearing waarde 1</h4>
+                <div class="analog">...</div>
+        </div>
+    </div>
+    -->
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm text-center">
+                <!--<button onclick="showLoc();">Show location properties</button> -->
+                
+                <div class="alert alert-light" role="alert" id = "display">Not connected to Rotor</div>
+      
+                    <div class=".btn-group-vertical" role="group" aria-label="" style="padding-bottom: 15px;">
+                      <button type="button" class="btn btn-primary btn-lg custom1" id="button_ccw" onclick="onPressButton(2)">CCW OFF</button>
+                        <button type="button" class="btn btn-primary btn-lg custom1" id="button_cw" onclick="onPressButton(1)">CW OFF</button>
+                        <button type="button" class="btn btn-danger custom1 btn-lg " id="button_brake" onclick="onPressButton(3)">BRAKE OFF</button> 
+       
+                    </div>
+              
+             </div>
+        </div>
+
+
+
+
+
+
+    </div>
+    </div>
+
+
+
+</div>
         
+               <!-- Footer -->
+        <footer id="sticky-footer" class="py-4 bg-dark text-white-50">
+            <div class="container text-center" >
+            <small>GNU licence &copy; 2020 PA0ESH - V1.4</small>
+            </div>
+      </footer>
+    
 <script>
 var x = document.getElementById("demo");
 
