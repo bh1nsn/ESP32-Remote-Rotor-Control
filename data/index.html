@@ -160,7 +160,7 @@ function onOpen(evt) {
                     });
          document.getElementById("display_info").innerHTML = "Web Rotor is initiated";
         // Get the current position from the rotor
-         doSend("getBEARINGState"); 
+         //doSend("getBEARINGState"); 
          doSend("getBRAKEState");
          doSend("getCWState");
          doSend("getCCWState");
@@ -170,6 +170,7 @@ function onOpen(evt) {
         button_cw.disabled = false;
         button_ccw.disabled = false;
         document.getElementById("display_info").innerHTML = "Web Rotor receiving data"; 
+        doSend("getBEARINGState"); 
 }
 
 
