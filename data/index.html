@@ -10,36 +10,36 @@
     
   </head>
 <style>
-    /*
+/*
 *
 * ==========================================
-* CUSTOM UTIL CLASSES
+* CUSTOM UTILITY CLASSES
 * ==========================================
 *
 */
 
-     .btn:focus {
+.btn:focus {
   outline: none;
   box-shadow: none;
 }
   
-  .custom {
+.custom {
     width: 160px !important;
       margin-bottom: 10px !important;
        margin-top: 10px !important;
 }
   
-   .custom1 {
+.custom1 {
     width: 190px !important;
      margin-bottom: 10px;
        margin-top: 10px;
 }
 
-  .jumbotron{
+.jumbotron{
     margin-bottom: 0;
   }
     
-    html,body{
+html,body{
   width:100%;
   height:100%;
   margin:0;
@@ -62,14 +62,12 @@
   height:calc(100vh - 50px);
 }
     
-    <style>
-
 .footer {
-position: fixed;
-height: 60px;
-bottom: 0;
-width: 100%;
-background-color: #f5f5f5;
+    position: fixed;
+    height: 60px;
+    bottom: 0;
+    width: 100%;
+    background-color: #f5f5f5;
 }
 .alert {
  display:inline-block;
@@ -79,9 +77,7 @@ background-color: #f5f5f5;
     
 </style>
 <body>
- 
 
-    <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
 
@@ -90,9 +86,24 @@ background-color: #f5f5f5;
     <!-- <script src="jquery.slim.min.js"></script> -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="gauge.min.js"></script>
+    <script type="text/javascript" src="segment-display.js"></script>
     
-    
-<script language="javascript" type="text/javascript">
+<script type="text/javascript">
+
+var display = new SegmentDisplay("display");
+      display.pattern         = "###";
+      display.displayAngle    = 0.5;
+      display.digitHeight     = 20;
+      display.digitWidth      = 12;
+      display.digitDistance   = 2.5;
+      display.segmentWidth    = 2.5;
+      display.segmentDistance = 0.5;
+      display.segmentCount    = 7;
+      display.cornerType      = 3;
+      display.colorOn         = "rgba(255, 255, 255, 0.9)";
+      display.colorOff        = "rgba(0, 0, 0, 0.1)";
+      display.value           = 0;
+      display.draw();
        
 // websocket connect info - define fuctip to obtain websocket ip on the fly
 var url = "ws://192.168.178.85:1337/";
@@ -104,121 +115,111 @@ var context;
 var endstop;
     
 var res;
-
+var res_stop
+res_stop = 0;
+var Starting_App
+Starting_App = 0;
     
-function mouseDown_cw() {
- //document.getElementById("button_cw").innerHTML = "CW ON";
-}
-
-function mouseUp_cw() {
- document.getElementById("button_cw").innerHTML = "CW OFF";
-}
-function mouseDown_ccw() {
- document.getElementById("button_ccw").innerHTML = "CW ON";
-}
-
-function mouseUp_ccw() {
- document.getElementById("button_ccw").innerHTML = "CW OFF";
-}
 
 
 // This is called when the page finishes loading
 function init() {
-    
     // Assign page elements to variables
     button_brake = document.getElementById("button_brake");
     button_cw = document.getElementById("button_cw");
     button_ccw = document.getElementById("button_ccw");
      // Connect to WebSocket server
-    wsConnect();
     
+    wsConnect();
+}
  
 // Call this to connect to the WebSocket server
 function wsConnect() {
-    // Connect to WebSocket server
-    websocket = new WebSocket(url);
-    //websocket = new WebSocket(((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + ":1337");
-    websocket.onopen = function(evt) { onOpen(evt) };
-    websocket.onclose = function(evt) { onClose(evt) };
-    websocket.onmessage = function(evt) { onMessage(evt) };
-    websocket.onerror = function(evt) { onError(evt) };
+        // Connect to WebSocket server
+        websocket = new WebSocket(url);
+        //websocket = new WebSocket(((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + ":1337");
+        websocket.onopen = function(evt) { onOpen(evt) };
+        websocket.onclose = function(evt) { onClose(evt) };
+        websocket.onmessage = function(evt) { onMessage(evt) };
+        websocket.onerror = function(evt) { onError(evt) };
+        button_brake.disabled = true;
+        button_cw.disabled = true;
+        button_ccw.disabled = HTMLOptGroupElement;
+        document.getElementById("display_info").innerHTML = "Web Rotor is initiated";
 }
  
-
-   
 // Called when a WebSocket connection is established with the server
 function onOpen(evt) {
- 
-    // Log connection state
-     console.log("Connected");
-     //chime();
-     document.getElementById("display").innerHTML = "Rotor Initialising";
-    // Get the current position from the rotor
-     doSend("getBEARINGState"); 
-     doSend("getBRAKEState");
-     doSend("getCWState");
-     doSend("getCCWState");
-    
-    //Enable the buttons
-    button_brake.disabled = false;
-    button_cw.disabled = false;
-    button_ccw.disabled = false;
-    document.getElementById("display").innerHTML = "Rotor receiving bearing data";
+
+        // Log connection state
+        //console.log("Connected");
+        gauge.update({
+                    //animation: false,
+                    colorPlate: "green",
+                    animationDuration: 1500
+                    });
+         document.getElementById("display_info").innerHTML = "Web Rotor is initiated";
+        // Get the current position from the rotor
+         doSend("getBEARINGState"); 
+         doSend("getBRAKEState");
+         doSend("getCWState");
+         doSend("getCCWState");
+
+        //Enable the buttons
+        button_brake.disabled = false;
+        button_cw.disabled = false;
+        button_ccw.disabled = false;
+        document.getElementById("display_info").innerHTML = "Web Rotor receiving data"; 
 }
 
 
-}
  
 // Called when the WebSocket connection is closed
 function onClose(evt) {
- 
     // Log disconnection state
-    console.log("Disconnected");
-    document.getElementById("display").innerHTML = "Rotor disconnected, retrying";
-    // Disable button
-    button_brake.disabled = true;
-    button_cw.disabled = true;
-    button_ccw.disabled = true;
-    // set the CW and CCW switches to OFF
-    var cw_status;
-    cw_status = document.getElementById("button_cw").innerHTML;
-    if (cw_status == "CW ON"){
-    doSend("toggleCW");
-    doSend("getCWState");
-    console.log("CW switch is switched to OFF");
-    }
-    var ccw_status;
-    ccw_status = document.getElementById("button_ccw").innerHTML;
-    if (ccw_status == "CCW ON"){
-    doSend("toggleCCW");
-    doSend("getCCWState");
-    console.log("CCW switch is switched to OFF");
-    }
+    // console.log("Disconnected");
+    document.getElementById("display_info").innerHTML = "Rotor disconnected, retrying";
+    // display.setValue('000');
     // Try to reconnect after a few seconds
-    setTimeout(function() { wsConnect(url) }, 1000);
+    wsConnect(url);
 }
  
 // Called when a message is received from the server
 function onMessage(evt) {
         // Print out our received message
-        console.log("Received by the webpage: " + evt.data);
-        // cinstruct the bearing value from the string received
+         // cinstruct the bearing value from the string received
         res = evt.data.substr(0, 9);
-        if (res == "Bearing :") {
-        document.getElementById("display").innerHTML = "Rotor receiving bearing data";
-        res = evt.data.substr(9, 3);
-        //console.log("This is bearing data: " + res + " degrees");
-        
-        gauge.value = res; 
-        endstop = gauge.value;
-        //gauge.animationduration + 50;
-        gauge.animationDuration = 1500;
-        gauge.draw();
+        res_msg = evt.data.substr(0, 9);
+        //console.log("Received string  |" + evt.data+"|");
+        //console.log("Received message |" + res_msg+"|");
 
-        }
+         if (res == "Bearing :") {
+                document.getElementById("display").innerHTML = "Rotor receiving bearing data";
+                res = evt.data.substr(9, 3);
+                //console.log("This is bearing data: " + res + " degrees");
+                if ((res_stop =1) && (res <359) && (res > 1)){
+   
+                        gauge.update({
+                        //animation: false,
+                        colorPlate: "green"
+                        });          
+                }
+             
+                            if (Starting_App == 0){  
+                            console.log("Allowing data to come.");
+                            Starting_App = 1;
+                            doSend("StartBearing"); 
+                            
+                            } else {
+                            gauge.value = res;
+                            endstop = res;
+                            display.setValue(res);
+                            }
+               
+         }
     
-    // Update circle graphic with LED state
-    switch(evt.data) {
+
+switch(evt.data) {
 // Spare switch or LED
         case "0":
         //
@@ -227,32 +228,34 @@ function onMessage(evt) {
             
 // CW switch
         case "2":
-            console.log("CW switch is switched to OFF");
-            document.getElementById("button_cw").innerHTML='CW OFF<span class="" role="status" aria-hidden="true"></span>'; 
+            //console.log("CW switch is switched to OFF");
+            document.getElementById("button_cw").innerHTML='CW OFF   <span class="" role="status" aria-hidden="true"></span>'; 
             break;  
         case "3":
-            console.log("CW switch is switched to ON");
-            document.getElementById("button_ccw").innerHTML='CCW OFF<span class="s" role="status" aria-hidden="true"></span>';
+            //console.log("CW switch is switched to ON");
+            gauge.colorPlate = "green";
+            document.getElementById("button_ccw").innerHTML='CCW OFF  <span class="s" role="status" aria-hidden="true"></span>';
 
-            document.getElementById("button_cw").innerHTML='CW ON<span class="spinner-border spinner-border" role="status" aria-hidden="true"></span>';
+            document.getElementById("button_cw").innerHTML='CW ON   <span class="spinner-border spinner-border float-right" role="status" aria-hidden="true"></span>';
              break;
             
 // CCW switch            
         case "4":
-            console.log("CCW switch is is switched to OFF");
-               document.getElementById("button_ccw").innerHTML='CCW OFF<span class="" role="status" aria-hidden="true"></span>'; 
+            //console.log("CCW switch is is switched to OFF");
+               document.getElementById("button_ccw").innerHTML='CCW OFF  <span class="" role="status" aria-hidden="true"></span>'; 
             break;  
   
         case "5":
-            console.log("CCW switch is switched to ON");
-            document.getElementById("button_cw").innerHTML='CW OFF<span class="s" role="status" aria-hidden="true"></span>';
-            document.getElementById("button_ccw").innerHTML='CCW ON<span class="spinner-border spinner-border" role="status" aria-hidden="true"></span>';
+            //console.log("CCW switch is switched to ON");
+            document.getElementById("button_cw").innerHTML='CW OFF   <span class="s" role="status" aria-hidden="true"></span>';
+            gauge.colorPlate = "green";
+
+            document.getElementById("button_ccw").innerHTML='CCW ON  <span class="spinner-border spinner-border float-right " role="status" aria-hidden="true"></span>';
             break;
    
-
 // BRAKE switch
        case "6":
-            console.log("Brake is switched to OFF");
+            //console.log("Brake is switched to OFF");
             document.getElementById("button_brake").innerHTML = "BRAKE OFF";
             button_cw.disabled = false;
             button_ccw.disabled = false;
@@ -263,7 +266,7 @@ function onMessage(evt) {
             if (cw_status == "CW ON"){
             doSend("toggleCW");
             doSend("getCWState");
-            console.log("CW switch is switched to OFF");
+            //console.log("CW switch is switched to OFF");
             document.getElementById("button_cw").innerHTML='CW OFF<span class="s" role="status" aria-hidden="true"></span>'   
             }
             var ccw_status;
@@ -271,29 +274,36 @@ function onMessage(evt) {
             if (ccw_status == "CCW ON"){
             doSend("toggleCCW");
             doSend("getCCWState");
-            console.log("CCW switch is switched to OFF");
+            //console.log("CCW switch is switched to OFF");
             document.getElementById("button_ccw").innerHTML='CCW OFF;';
             }
-            console.log("Brake is is switched to ON");    
+            //console.log("Brake is is switched to ON");    
             document.getElementById("button_brake").innerHTML = "BRAKE ON";
             button_cw.disabled = true;
             button_ccw.disabled = true;
             break;
  
- 
+        case "99":
+            //console.log("Plate should be switched to red");  
+            gauge.update({
+                colorPlate: "red"
+                });
+            res_stop = 1;
+            break;
         default:
             break;
     }
 }
- 
+
+
 // Called when a WebSocket error occurs
 function onError(evt) {
-    console.log("ERROR: " + evt.data);
+    //console.log("ERROR: " + evt.data);
 }
  
 // Sends a message to the server (and prints it to the console)
 function doSend(message) {
-    console.log("Sending: " + message);
+    //console.log("Sending: " + message);
     websocket.send(message);
 }
  
@@ -302,20 +312,20 @@ function onPressButton(x) {
     switch(x){
         case 1:
                 if (endstop > 358) {
-                console.log("Going CW with rotorvalue: " + endstop);
-                document.getElementById("display").innerHTML = "CW Endstop reached!";
+                //console.log("Going CW with rotorvalue: " + endstop);
+                document.getElementById("display_info").innerHTML = "CW Endstop reached!";
                 } else {
-                document.getElementById("display").innerHTML = "Rotor receiving bearing data";
+                document.getElementById("display_info").innerHTML = "Rotor receiving bearing data";
                 doSend("toggleCW");
                 doSend("getCWState");
                 }
             break;
         case 2:
             if (endstop <= 2) {
-               console.log("Going CCW with rotorvalue: " + endstop);
-                document.getElementById("display").innerHTML = "CCW endstop reached!";
+               //console.log("Going CCW with rotorvalue: " + endstop);
+                document.getElementById("display_info").innerHTML = "CCW endstop reached!";
             } else {
-                document.getElementById("display").innerHTML = "Rotor receiving bearing data";
+                document.getElementById("display_info").innerHTML = "Rotor receiving bearing data";
                 doSend("toggleCCW");
                 doSend("getCCWState");
             }
@@ -326,46 +336,27 @@ function onPressButton(x) {
             
             break;
        case 4:
-            var rot_sw = document.getElementById("button_test").innerText;
-            console.log("Status Test switch is :"+rot_sw);
-            switch (rot_sw) {
-                case "CCW OFF":
-                    document.getElementById("button_test").innerHTML='CCW ON <span class="spinner-border spinner-border" role="status" aria-hidden="true"></span>'; 
-                    break;
-                    
-                case "CCW ON ":
-                    document.getElementById("button_test").innerHTML='CCW OFF'; 
-                    break;
-                default:fgig
-                    break;       
-            }
-            
-                
+
             break;
-        default:
-            break;
-            
+       default:
+            break;         
     }
-
-
 }
          
 function GetRotorBearing()
 		{
           doSend("getBEARINGState"); 
-          console.log("BEARING value requested");
+          //console.log("BEARING value requested");
 		}
-
-                  
-         
+    
 // Call the init function as soon as the page loads
 window.addEventListener("load", init, false);
  
 </script>
-
+ 
+    
 <body>
-
-  
+<div class="imageH">
          <!-- Navigation -->
       <nav class="navbar navbar-expand-lg navbar-dark bg-dark static-top">
         <div class="container-fluid">
@@ -381,22 +372,23 @@ window.addEventListener("load", init, false);
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="">WiFi Switch</a>
+                <a class="nav-link" href="update">Update OTA</a>
               </li>
             </ul>
           </div>
         </div>
       </nav>    
-<div class="imageH">
-    <div class="container" >
+
 
     <div class="container-fluid">
-        <div class="col-sm text-center">
+        <div class="col-sm text-center">            
              <br>
-                <canvas  id="kompass"></canvas>
-            <script>
+            <center>
+            <canvas id="rotor_clock"></canvas>
+                
+<script>
                 var gauge = new RadialGauge({
-                renderTo: 'kompass',
+                renderTo: 'rotor_clock',
                 height:250,
                 minValue: 0,
                 maxValue: 360,
@@ -411,12 +403,16 @@ window.addEventListener("load", init, false);
                     "NW",
                     "N"
                 ],
+                title : "ANTENNA BEARING",
+                fontTitleSize: 30,
+                fontTitleWeight: "bold",
+                fontTitleColor: "rgb(0, 0, 0)",
                 minorTicks: 22,
                 ticksAngle: 360,
                 startAngle: 180,
                 strokeTicks: false,
                 highlights: false,
-                colorPlate: "#222",
+                colorPlate: "black",
                 colorMajorTicks: "#f5f5f5",
                 colorMinorTicks: "#ddd",
                 colorNumbers: "#ccc",
@@ -441,58 +437,49 @@ window.addEventListener("load", init, false);
                 colorBorderOuterEnd: "#ccc",
                 colorNeedleShadowDown: "#222",
                 borderShadowWidth: 0,
-                valueBox: true,
+                valueBox: false,
                 valueInt: 3,
                 valueDec: 0,
-                animationDuration: 1000
+                animateOnInit: true,
+                useMinPath : true,
+                animationDuration: 1500
             }).draw();
 
-            </script>
+</script>
+            
+            </center>
+        </div>
+    </div>
 
-        </div>
-    </div>
-    <!-- You can out the bearing in numbers here
-    <div class="container-fluid">   
-        <div class="col-lg-12 text-center">
-                <h4 class="mt-5">Bearing waarde 1</h4>
-                <div class="analog">...</div>
-        </div>
-    </div>
-    -->
 
     <div class="container-fluid">
         <div class="row">
             <div class="col-sm text-center">
                 <!--<button onclick="showLoc();">Show location properties</button> -->
                 
-                <div class="alert alert-light" role="alert" id = "display">Not connected to Rotor</div>
-      
-                    <div class=".btn-group-vertical" role="group" aria-label="" style="padding-bottom: 15px;">
+                <center>
+                         
+                        <canvas id="display" width="120" height="34" align = "right"></canvas>
+                        
+                    </center>
+                      
+  
+                    <div class="btn-group-vertical" align="center" role="group" aria-label="" style="padding-bottom: 15px;">
+                        <div class="alert alert-light custom1" role="alert" id = "display_info">.....</div>
                       <button type="button" class="btn btn-primary btn-lg custom1" id="button_ccw" onclick="onPressButton(2)">CCW OFF</button>
                         <button type="button" class="btn btn-primary btn-lg custom1" id="button_cw" onclick="onPressButton(1)">CW OFF</button>
-                        <button type="button" class="btn btn-danger custom1 btn-lg " id="button_brake" onclick="onPressButton(3)">BRAKE OFF</button> 
-       
+                        <button type="button" class="btn btn-danger custom1 btn-lg" data-toggle="popover" id="button_brake" onclick="onPressButton(3)">BRAKE OFF</button> 
                     </div>
-              
+                 
              </div>
         </div>
-
-
-
-
-
-
     </div>
-    </div>
-
-
-
 </div>
         
                <!-- Footer -->
         <footer id="sticky-footer" class="py-4 bg-dark text-white-50">
             <div class="container text-center" >
-            <small>GNU licence &copy; 2020 PA0ESH - V1.4</small>
+            <small>GNU licence &copy; 2020 PA0ESH - V1.5</small>
             </div>
       </footer>
     
