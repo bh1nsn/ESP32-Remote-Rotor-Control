@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------
- * WiFI Rotor Controller - Version 1.3
+ * WiFI Rotor Controller - Version 1.5
 
   Description:  ESP32 server in combination with ajax calls
                 realizes an app which constantly show the bearing
@@ -9,9 +9,9 @@
                 Pressing the brake, will first stop any CW or CCW movement
                 and then apply the brake after approx 1000 ms (1 sec)
                 Turning beyond 359 degrees or less than 0 is
-                not possible.
+                not possible. The Web app will stop either movement and the dial turns red
                 The software does not maintain the position
-                of the antenna. Once you stop the rotor, that is it.
+                of the antenna. Once you stop the rotor, that is it. If it slips, the value will be shown.
   
   Hardware:     ESP32 Wrover board. Should also work with ESP8266
                 boards but needs to refine the pins as well as certain libraries. To be investigated
@@ -42,7 +42,7 @@
                 page called /index.htmL and some css and js files
                 Use ESP32 Tool to upload File system contents via Arduino IDE.
                 
-  Date:         21-06-2020
+  Date:         28-06-2020
  
   Author:       Erik Schott - erik@pa0esh.com
 --------------------------------------------------------------*/
@@ -59,8 +59,8 @@
 const char* host = "webrotor";
 const char *default_instance  = "Web Rotor Controller by PA0ESH";
 const char *ssid_wl           = "xxxxxxxxxx";
-const char *ssid_ap           = "Webrotor";
-const char *password          =  "xxxxxxxxxx";
+const char *ssid_ap           = "webrotor";
+const char *password          =  "xxxxxxxxxxx";
 const char *msg_toggle_led    = "toggleLED";
 const char *msg_toggle_CW     = "toggleCW";
 const char *msg_toggle_CCW    = "toggleCCW";
@@ -88,8 +88,11 @@ int brake_state   = 0;
 int stop_state    = 0;
 int analog_val    = 0;
 int analog_val_old = 0;
+int StartBearing   = 0;
 
 boolean LED_state[4] = {0};       // stores the states of the LEDs
+#define Rotor_Msg 10
+String results[Rotor_Msg] = { "L manual  CCW", "R manual CW", "A stop rotation", "C current Azimuth" }; // commands to control VERONVRZA digital rotor.
 
 // Globals
 
@@ -100,9 +103,6 @@ char client_rotor;
 AsyncWebServer server(80);
 WebSocketsServer webSocket = WebSocketsServer(1337);
 
-
-
- 
 /***********************************************************
  * Functions
  */
@@ -154,7 +154,7 @@ void onWebSocketEvent(uint8_t client_num,
         if (ccw_state == 1){
          ccw_state=0;
          digitalWrite(ccw_pin, ccw_state);
-         delay(500);
+         delay(200);
         }
         cw_state = cw_state ? 0 : 1;
         Serial.printf("Toggling CW switch to %u\n", cw_state);
@@ -171,7 +171,7 @@ void onWebSocketEvent(uint8_t client_num,
         if (cw_state == 1){
          cw_state=0;
          digitalWrite(cw_pin, cw_state);
-         delay(500);
+         delay(200);
         }
 
         ccw_state = ccw_state ? 0 : 1;
@@ -189,14 +189,14 @@ void onWebSocketEvent(uint8_t client_num,
          cw_state=0;
          Serial.printf("Toggling the CW switch to %u\n", cw_state);
          digitalWrite(cw_pin, cw_state);
-         delay(1500);
+         delay(200);
         }
 
         if (ccw_state == 1){
          ccw_state=0;
          Serial.printf("Toggling the CCW switch to %u\n", ccw_state);
          digitalWrite(ccw_pin, ccw_state);
-         delay(1500);
+         delay(200);
         }
   
         digitalWrite(brake_pin, brake_state);
@@ -233,6 +233,12 @@ void onWebSocketEvent(uint8_t client_num,
         sprintf(msg_buf, "%d", brake_state+6);
         Serial.printf("Sending to [%u]: %s\n", client_num, msg_buf);
         webSocket.broadcastTXT(msg_buf);
+
+          // Report the state of the BRAKE button
+      } else if ( strcmp((char *)payload, "StartBearing") == 0 ) {
+        //sprintf(msg_buf, "%d", brake_state+6);
+        //Serial.printf("Sending to [%u]: %s\n", client_num, msg_buf);
+        StartBearing = 1;
  
       // Message not recognized
       } else {
@@ -261,6 +267,15 @@ void onIndexRequest(AsyncWebServerRequest *request) {
   request->send(SPIFFS, "/index.html", "text/html");
 }
 
+// Callback: send update.html
+void onUPDATERequest(AsyncWebServerRequest *request) {
+  IPAddress remote_ip = request->client()->remoteIP();
+  Serial.println("[" + remote_ip.toString() +
+                  "] HTTP GET request of " + request->url());
+  request->send(SPIFFS, "/update.html", "text/html");
+}
+
+
 // Callback: send css
 void onCSSRequest(AsyncWebServerRequest *request) {
   IPAddress remote_ip = request->client()->remoteIP();
@@ -283,6 +298,14 @@ void onJGRequest(AsyncWebServerRequest *request) {
   Serial.println("[" + remote_ip.toString() +
                   "] HTTP GET request of " + request->url());
   request->send(SPIFFS, "/gauge.min.js", "application/javascript");
+}
+
+//Callback: send javascript segment-display
+void on7SEGRequest(AsyncWebServerRequest *request) {
+  IPAddress remote_ip = request->client()->remoteIP();
+  Serial.println("[" + remote_ip.toString() +
+                  "] HTTP GET request of " + request->url());
+  request->send(SPIFFS, "/segment-display.js", "application/javascript");
 }
 
 // Callback: send javascript gauge meter
@@ -314,7 +337,7 @@ void onJPGRequest(AsyncWebServerRequest *request) {
   IPAddress remote_ip = request->client()->remoteIP();
   Serial.println("[" + remote_ip.toString() +
                   "] HTTP GET request of " + request->url());
-  request->send(SPIFFS, "/gears.jpg", "text/plain");
+  request->send(SPIFFS, "/europe.jpg", "text/plain");
 }
 
 
@@ -350,7 +373,8 @@ void setup() {
   digitalWrite(brake_pin, LOW);
   pinMode(spare_pin, OUTPUT);
   digitalWrite(spare_pin, LOW);
- 
+
+ Serial.println(xPortGetCoreID());
   // Start Serial port
   Serial.begin(115200);
 
@@ -387,6 +411,9 @@ while (WiFi.status() != WL_CONNECTED) {
  
   // On HTTP request for root, provide index.html file
   server.on("/", HTTP_GET, onIndexRequest);
+
+ // On HTTP request for update.html file
+  server.on("/", HTTP_GET, onUPDATERequest);
  
 
   // On HTTP request for style sheet, provide style.css
@@ -407,11 +434,19 @@ while (WiFi.status() != WL_CONNECTED) {
   // On HTTP request for bulboff.gif
   server.on("/pic_bulboff.gif", HTTP_GET, onGIFOFFRequest);
 
-// On HTTP request for bulboff.gif
-  server.on("/gears.jpg", HTTP_GET, onJPGRequest);
+// On HTTP request for europe.jpg
+  server.on("/europe.jpg", HTTP_GET, onJPGRequest);
+
+  // On HTTP request for europe.jpg
+  server.on("/segment-display.js", HTTP_GET, on7SEGRequest);
+
+
+  
 
   // Handle requests for pages that do not exist
   server.onNotFound(onPageNotFound);
+
+
  
   // Start web server
   server.begin();
@@ -434,56 +469,78 @@ void read_rotor_bearing(){
 
 
 void emergency_stop(){
-  Serial.print("Testing the STOP Rotor bearing is :");
-  Serial.println(analog_val); 
-    if (analog_val < 2 ) {
+   String rotor_stop = String(99);
+    
+   
+    if ((analog_val < 2) && (ccw_state == 1) ) {
        Serial.print("CCW STOP value is:");
        Serial.println(analog_val); 
-        String rotor = String(4);
-        //rotor = "STOP CCW :"+rotor,
-   
-    ccw_state = 0;
-    digitalWrite(ccw_pin, ccw_state);
-        webSocket.broadcastTXT(rotor);
+       rotor_stop = String(4);
+       ccw_state = 0;
+       digitalWrite(ccw_pin, ccw_state);
+       webSocket.broadcastTXT(rotor_stop);
+       rotor_stop = String(99);
+       webSocket.broadcastTXT(rotor_stop);
     delay(500);
 
-    } else if (analog_val > 358 ) {
+    } else if (analog_val > 358 && cw_state == 1 ) {
         Serial.print("CW STOP value is :");
         Serial.println(analog_val); 
-          String rotor = String(2);
-        //rotor = "Stop CW :"+rotor,
-        cw_state = 0;
+          rotor_stop = String(2);
+          cw_state = 0;
     digitalWrite(cw_pin, cw_state);
-        webSocket.broadcastTXT(rotor);
+        webSocket.broadcastTXT(rotor_stop);
+        rotor_stop = String(99);
+        webSocket.broadcastTXT(rotor_stop);
     delay(500);
 
 
     }
+ 
 }
 
 void sent_bearing_ws(){
      // compare last & current value of bearing. Only sent new data if > 2 degrees.
     read_rotor_bearing();
 
-    if (analog_val < analog_val_old-2 || analog_val > analog_val_old +2 ) {
+    if (analog_val < analog_val_old -2 || analog_val > analog_val_old +2 ) {
               String rotor = String(analog_val);
               rotor = "Bearing :"+rotor,
               webSocket.broadcastTXT(rotor);
-              Serial.print("Current Rotor bearing is :");
-              Serial.println(analog_val);  
-              //Serial.print("Previous Rotor bearing is :");
-              //Serial.println(analog_val_old);  
               analog_val_old = analog_val;
-              if (cw_state ==1 ||ccw_state ==1){
-              emergency_stop();
-              }
   }
+  emergency_stop();
 }
+
+void Task1code( void * pvParameters ){
+  
+}
+
+void Task2code( void * pvParameters ){  
+
+  for(;;){
+      //sent_bearing_ws();
+   delay(200);
+  } 
+}
+
 
 //The main loop
 void loop() {
-  // Look for and handle WebSocket data
+// Look for and handle WebSocket data
   webSocket.loop();
+  if (StartBearing > 0) {
   sent_bearing_ws();
-  delay(600);  // experimental value, may be incresed or lowered depending on results of page loading and data changes.
+}
+delay(600);  // experimental value, may be incresed or lowered depending on results of page loading and data changes.
+}
+
+String getContentType(String filename) { // determine the filetype of a given filename, based on the extension
+  if (filename.endsWith(".html")) return "text/html";
+  else if (filename.endsWith(".css")) return "text/css";
+  else if (filename.endsWith(".js")) return "application/javascript";
+  else if (filename.endsWith(".ico")) return "image/x-icon";
+  else if (filename.endsWith(".jpg")) return "image/x-icon";
+  else if (filename.endsWith(".gz")) return "application/x-gzip";
+  return "text/plain";
 }
