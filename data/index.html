@@ -140,8 +140,8 @@ function wsConnect() {
         websocket = new WebSocket(url);
         //websocket = new WebSocket(((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + ":1337");
         websocket.onopen = function(evt) { onOpen(evt) };
-        websocket.onclose = function(evt) { onClose(evt) };
         websocket.onmessage = function(evt) { onMessage(evt) };
+        websocket.onclose = function(evt) { onClose(evt) };
         websocket.onerror = function(evt) { onError(evt) };
         button_brake.disabled = true;
         button_cw.disabled = true;
@@ -233,40 +233,36 @@ switch(evt.data) {
             
 // CW switch
         case "2":
-            //console.log("CW switch is switched to OFF");
-            document.getElementById("button_cw").innerHTML='CW OFF   <span class="" role="status" aria-hidden="true"></span>'; 
-            break;  
-        case "3":
-            //console.log("CW switch is switched to ON");
+            console.log("CW switch is switched to ON");
             gauge.colorPlate = "green";
             document.getElementById("button_ccw").innerHTML='CCW OFF  <span class="s" role="status" aria-hidden="true"></span>';
-
             document.getElementById("button_cw").innerHTML='CW ON   <span class="spinner-border spinner-border float-right" role="status" aria-hidden="true"></span>';
-             break;
+            break;
             
-// CCW switch            
-        case "4":
-            //console.log("CCW switch is is switched to OFF");
-               document.getElementById("button_ccw").innerHTML='CCW OFF  <span class="" role="status" aria-hidden="true"></span>'; 
+         case "3":
+            console.log("CW switch is switched to OFF");
+            document.getElementById("button_cw").innerHTML='CW OFF   <span class="" role="status" aria-hidden="true"></span>'; 
             break;  
-  
-        case "5":
-            //console.log("CCW switch is switched to ON");
+      
+        case "4":
+
+            console.log("CCW switch is switched to ON");
             document.getElementById("button_cw").innerHTML='CW OFF   <span class="s" role="status" aria-hidden="true"></span>';
             gauge.colorPlate = "green";
 
             document.getElementById("button_ccw").innerHTML='CCW ON  <span class="spinner-border spinner-border float-right " role="status" aria-hidden="true"></span>';
             break;
    
+  
+        case "5":
+            console.log("CCW switch is is switched to OFF");
+            document.getElementById("button_ccw").innerHTML='CCW OFF  <span class="" role="status" aria-hidden="true"></span>'; 
+            break;  
+  
+
 // BRAKE switch
        case "6":
-            //console.log("Brake is switched to OFF");
-            document.getElementById("button_brake").innerHTML = "BRAKE OFF";
-            button_cw.disabled = false;
-            button_ccw.disabled = false;
-            break;
-        case "7":
-            var cw_status;
+           var cw_status;
             cw_status = document.getElementById("button_cw").innerText;
             if (cw_status == "CW ON"){
             doSend("toggleCW");
@@ -287,7 +283,14 @@ switch(evt.data) {
             button_cw.disabled = true;
             button_ccw.disabled = true;
             break;
- 
+         case "7":
+            console.log("Brake is switched to OFF");
+            document.getElementById("button_brake").innerHTML = "BRAKE OFF";
+            button_cw.disabled = false;
+            button_ccw.disabled = false;
+            break;
+
+
         case "99":
             //console.log("Plate should be switched to red");  
             gauge.update({
