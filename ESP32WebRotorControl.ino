@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------
- * WiFI Rotor Controller - Version 1.5
+ * WiFI Rotor Controller - Version 1.6
 
   Description:  ESP32 server in combination with ajax calls
                 realizes an app which constantly show the bearing
@@ -28,9 +28,9 @@
                 25  Digital input 4  : Free
 
                 Outputs
-                26  Digital output 1 : CW relais
-                27  Digital output 1 : CCW relais
-                14  Digital output 1 : BRAKE relais
+                26  Digital output 1 : CW relais    - using HIGH level as OFF   HL-52S TYPE OF BOARDS
+                27  Digital output 1 : CCW relais   - using HIGH level as OFF 
+                14  Digital output 1 : BRAKE relais - using HIGH level as OFF 
                 12  Digital output 1 : Free
                 Relays: Jotta SSR-25 da
                 
@@ -42,7 +42,7 @@
                 page called /index.htmL and some css and js files
                 Use ESP32 Tool to upload File system contents via Arduino IDE.
                 
-  Date:         28-06-2020
+  Date:         29-06-2020
  
   Author:       Erik Schott - erik@pa0esh.com
 --------------------------------------------------------------*/
@@ -58,9 +58,9 @@
 
 const char* host = "webrotor";
 const char *default_instance  = "Web Rotor Controller by PA0ESH";
-const char *ssid_wl           = "xxxxxxxxxxxxxxx";
-const char *ssid_ap           = "webrotor";
-const char *password          =  "xxxxxxxxxxxxxxx";
+const char *ssid_wl           = "xxxxxxxxxxxxxxxx";  //Your home WiFi network name
+const char *ssid_ap           = "webrotor";          //Your acces point network name on 2.4 Ghz
+const char *password          = "xxxxxxxxxxxx";      //Your home WiFi network password and the password for the acces point
 const char *msg_toggle_led    = "toggleLED";
 const char *msg_toggle_CW     = "toggleCW";
 const char *msg_toggle_CCW    = "toggleCCW";
@@ -352,7 +352,7 @@ void onPageNotFound(AsyncWebServerRequest *request) {
   request->send(404, "text/plain", "Not found");
 }
 
-
+// routine to stop the rotor immedeately
  void set_stop (){
     cw_state = stop_state;
     ccw_state = stop_state;
@@ -463,20 +463,17 @@ while (WiFi.status() != WL_CONNECTED) {
 }
 
 // Rotor bearing values taken from 500 ohm potentiometer - middle pin connects to 34
-
 void read_rotor_bearing(){
       analog_val = analogRead(analog_pin);   
-      graden = map(analog_val,4,4096,0,360);  // here is wehere you convert from voltage rotor into degree
-      // calibration routine be be written
+      graden = map(analog_val,10,4020 ,0,360);  // here is wehere you convert from voltage rotor into degree
+      // calibration routine to be be written still
 }
 
-
+// emergenct stop routine if rotor get's to end stop values.
 void emergency_stop(){
-   String rotor_stop = String(99);
-    
-   
-    if ((analog_val < 10) && (ccw_state == 0) ) {
-       Serial.print("CCW STOP value is:");
+    String rotor_stop = String(99);
+     if ((analog_val < 20) && (ccw_state == 0) ) {
+       Serial.print("The STOP value is:");
        Serial.println(analog_val); 
        rotor_stop = String(5);
        ccw_state = 1;
@@ -484,47 +481,30 @@ void emergency_stop(){
        webSocket.broadcastTXT(rotor_stop);
        rotor_stop = String(99);
        webSocket.broadcastTXT(rotor_stop);
-    delay(500);
+      delay(500);
 
-    } else if (analog_val > 4092 && cw_state == 0 ) {
-        Serial.print("CW STOP value is :");
-        Serial.println(analog_val); 
-          rotor_stop = String(3);
-          cw_state = 1;
-    digitalWrite(cw_pin, cw_state);
-        webSocket.broadcastTXT(rotor_stop);
-        rotor_stop = String(99);
-        webSocket.broadcastTXT(rotor_stop);
-    delay(500);
-
-
+    } else if (analog_val > 4000 && cw_state == 0 ) {
+       Serial.print("The STOP value is:");
+       Serial.println(analog_val); 
+       rotor_stop = String(3);
+       cw_state = 1;
+       digitalWrite(cw_pin, cw_state);
+       webSocket.broadcastTXT(rotor_stop);
+       rotor_stop = String(99);
+       webSocket.broadcastTXT(rotor_stop);
+       delay(500);
     }
- 
 }
 
+// routine to sent continously the bearing values
 void sent_bearing_ws(){
      // compare last & current value of bearing. Only sent new data if > 2 degrees.
-    read_rotor_bearing();
-
-  //  if (analog_val < analog_val_old -1 || analog_val > analog_val_old +1 ) {
-              String rotor = String(graden);
-              rotor = "Bearing :"+rotor,
-              webSocket.broadcastTXT(rotor);
-              analog_val_old = analog_val;
-//  }
-  emergency_stop();
-}
-
-void Task1code( void * pvParameters ){
-  
-}
-
-void Task2code( void * pvParameters ){  
-
-  for(;;){
-      //sent_bearing_ws();
-   delay(200);
-  } 
+     read_rotor_bearing();
+     String rotor = String(graden);
+     rotor = "Bearing :"+rotor,
+     webSocket.broadcastTXT(rotor);
+     analog_val_old = analog_val;
+     emergency_stop();
 }
 
 
@@ -532,9 +512,7 @@ void Task2code( void * pvParameters ){
 void loop() {
 // Look for and handle WebSocket data
   webSocket.loop();
-  if (StartBearing > 0) {
   sent_bearing_ws();
-}
 delay(600);  // experimental value, may be incresed or lowered depending on results of page loading and data changes.
 }
 
