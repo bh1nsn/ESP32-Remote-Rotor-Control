@@ -58,9 +58,9 @@
 
 const char* host = "webrotor";
 const char *default_instance  = "Web Rotor Controller by PA0ESH";
-const char *ssid_wl           = "xxxxxxxxxxxxxx";
+const char *ssid_wl           = "xxxxxxxxxxxxxxx";
 const char *ssid_ap           = "webrotor";
-const char *password          =  "xxxxxxxxxxxxx";
+const char *password          =  "xxxxxxxxxxxxxxx";
 const char *msg_toggle_led    = "toggleLED";
 const char *msg_toggle_CW     = "toggleCW";
 const char *msg_toggle_CCW    = "toggleCCW";
@@ -82,15 +82,14 @@ const int spare_pin   = 12;  // connect your spare relais between GND and this p
 const int analog_pin  = 34;  // connect your spare relais between GND and this pin
 
 int led_state     = 0;
-int cw_state      = 0;
-int ccw_state     = 0;
-int brake_state   = 0;
-int stop_state    = 0;
+int cw_state      = 1;
+int ccw_state     = 1;
+int brake_state   = 1;
+int stop_state    = 1;
 int analog_val    = 0;
 int analog_val_old = 0;
 int StartBearing   = 0;
 int graden         = 0;
-int allow_bearing  = 0;
 
 boolean LED_state[4] = {0};       // stores the states of the LEDs
 #define Rotor_Msg 10
@@ -145,57 +144,59 @@ void onWebSocketEvent(uint8_t client_num,
         led_state = led_state ? 0 : 1;
         Serial.printf("Toggling LED to %u\n", led_state);
         digitalWrite(led_pin, led_state);
-       
-    // Toggle CW
-      } else if ( strcmp((char *)payload, "toggleCW") == 0 ) {
-
-        if (brake_state == 1){
-        exit;
-        } else {
-
-        if (ccw_state == 1){
-         ccw_state=0;
-         digitalWrite(ccw_pin, ccw_state);
-         delay(200);
-        }
-        cw_state = cw_state ? 0 : 1;
-        Serial.printf("Toggling CW switch to %u\n", cw_state);
-        digitalWrite(cw_pin, cw_state);
-        }
 
   // Toggle CCW
       } else if ( strcmp((char *)payload, "toggleCCW") == 0 ) {
 
-       if (brake_state == 1){
+       if (brake_state == 0){
         exit;
         } else {
+        Serial.println("Starting the CCW switch check");
+        Serial.printf("CW_State is  %u\n", cw_state);
+        if (cw_state == 0){
 
-        if (cw_state == 1){
-         cw_state=0;
+         cw_state=1;
          digitalWrite(cw_pin, cw_state);
          delay(200);
         }
-
-        ccw_state = ccw_state ? 0 : 1;
+        Serial.printf("De CCW state was  %u\n", ccw_state);
+        ccw_state = !ccw_state;
         Serial.printf("Toggling CCW switch to %u\n", ccw_state);
         digitalWrite(ccw_pin, ccw_state);
         }
 
+// Toggle CW
+      } else if ( strcmp((char *)payload, "toggleCW") == 0 ) {
+
+        if (brake_state == 0){
+        exit;
+        } else {
+        Serial.println("Starting the CCW switch check");
+        Serial.printf("CCW_State is  %u\n", cw_state);
+        if (ccw_state == 0){
+        ccw_state=1;
+         digitalWrite(ccw_pin, ccw_state);
+         delay(200);
+        }
+       cw_state = !cw_state;
+        Serial.printf("Toggling CW switch to %u\n", cw_state);
+        digitalWrite(cw_pin, cw_state);
+        }
           // Toggle BRAKE
       } else if ( strcmp((char *)payload, "toggleBRAKE") == 0 ) {
-        brake_state = brake_state ? 0 : 1;
+        brake_state = !brake_state;
         Serial.printf("Toggling the Brake to %u\n", brake_state);
         // check if CW and CCW switches are OFF, or switch them OFF
 
-        if (cw_state == 1){
-         cw_state=0;
+        if (cw_state == 0){
+         cw_state=1;
          Serial.printf("Toggling the CW switch to %u\n", cw_state);
          digitalWrite(cw_pin, cw_state);
          delay(200);
         }
 
-        if (ccw_state == 1){
-         ccw_state=0;
+        if (ccw_state == 0){
+         ccw_state=1;
          Serial.printf("Toggling the CCW switch to %u\n", ccw_state);
          digitalWrite(ccw_pin, ccw_state);
          delay(200);
@@ -236,7 +237,7 @@ void onWebSocketEvent(uint8_t client_num,
         Serial.printf("Sending to [%u]: %s\n", client_num, msg_buf);
         webSocket.broadcastTXT(msg_buf);
 
-          // Report website ready for bearing data
+          // Report the state of the BRAKE button
       } else if ( strcmp((char *)payload, "StartBearing") == 0 ) {
         //sprintf(msg_buf, "%d", brake_state+6);
         //Serial.printf("Sending to [%u]: %s\n", client_num, msg_buf);
@@ -368,11 +369,11 @@ void setup() {
   pinMode(led_pin, OUTPUT);
   digitalWrite(led_pin, LOW);
   pinMode(cw_pin, OUTPUT);
-  digitalWrite(cw_pin, LOW);
+  digitalWrite(cw_pin, HIGH);
   pinMode(ccw_pin, OUTPUT);
-  digitalWrite(ccw_pin, LOW);
+  digitalWrite(ccw_pin, HIGH);
   pinMode(brake_pin, OUTPUT);
-  digitalWrite(brake_pin, LOW);
+  digitalWrite(brake_pin, HIGH);
   pinMode(spare_pin, OUTPUT);
   digitalWrite(spare_pin, LOW);
 
@@ -474,22 +475,22 @@ void emergency_stop(){
    String rotor_stop = String(99);
     
    
-    if ((analog_val < 10) && (ccw_state == 1) ) {
+    if ((analog_val < 10) && (ccw_state == 0) ) {
        Serial.print("CCW STOP value is:");
        Serial.println(analog_val); 
-       rotor_stop = String(4);
-       ccw_state = 0;
+       rotor_stop = String(5);
+       ccw_state = 1;
        digitalWrite(ccw_pin, ccw_state);
        webSocket.broadcastTXT(rotor_stop);
        rotor_stop = String(99);
        webSocket.broadcastTXT(rotor_stop);
     delay(500);
 
-    } else if (analog_val > 4092 && cw_state == 1 ) {
+    } else if (analog_val > 4092 && cw_state == 0 ) {
         Serial.print("CW STOP value is :");
         Serial.println(analog_val); 
-          rotor_stop = String(2);
-          cw_state = 0;
+          rotor_stop = String(3);
+          cw_state = 1;
     digitalWrite(cw_pin, cw_state);
         webSocket.broadcastTXT(rotor_stop);
         rotor_stop = String(99);
@@ -502,19 +503,16 @@ void emergency_stop(){
 }
 
 void sent_bearing_ws(){
-   // compare last & current value of bearing. Only sent new data if > 2 degrees.
-   
-   read_rotor_bearing();
-              allow_bearing = abs(analog_val - analog_val_old);
-              if (allow_bearing < 5 ){
-              String rotor = String(analog_val);
+     // compare last & current value of bearing. Only sent new data if > 2 degrees.
+    read_rotor_bearing();
+
+  //  if (analog_val < analog_val_old -1 || analog_val > analog_val_old +1 ) {
+              String rotor = String(graden);
               rotor = "Bearing :"+rotor,
               webSocket.broadcastTXT(rotor);
               analog_val_old = analog_val;
-              emergency_stop();
-              } else {
-              analog_val_old = analog_val;
-              }
+//  }
+  emergency_stop();
 }
 
 void Task1code( void * pvParameters ){
@@ -536,8 +534,8 @@ void loop() {
   webSocket.loop();
   if (StartBearing > 0) {
   sent_bearing_ws();
-  }
-  delay(600);  // experimental value, may be incresed or lowered depending on results of page loading and data changes.
+}
+delay(600);  // experimental value, may be incresed or lowered depending on results of page loading and data changes.
 }
 
 String getContentType(String filename) { // determine the filetype of a given filename, based on the extension
