@@ -58,9 +58,9 @@
 
 const char* host = "webrotor";
 const char *default_instance  = "Web Rotor Controller by PA0ESH";
-const char *ssid_wl           = "xxxxxxxxxx";
-const char *ssid_ap           = "webrotor";
-const char *password          =  "xxxxxxxxxxx";
+const char *ssid_wl           = "xxxxxxxxxx";    // name of your wifi network
+const char *ssid_ap           = "webrotor";      // Name of Acces Point
+const char *password          =  "xxxxxxxxxxx";  // paasword for wifi network AND Acces Point
 const char *msg_toggle_led    = "toggleLED";
 const char *msg_toggle_CW     = "toggleCW";
 const char *msg_toggle_CCW    = "toggleCCW";
