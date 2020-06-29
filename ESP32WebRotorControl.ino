@@ -58,9 +58,9 @@
 
 const char* host = "webrotor";
 const char *default_instance  = "Web Rotor Controller by PA0ESH";
-const char *ssid_wl           = "xxxxxxxxxx";    // name of your wifi network
-const char *ssid_ap           = "webrotor";      // Name of Acces Point
-const char *password          =  "xxxxxxxxxxx";  // paasword for wifi network AND Acces Point
+const char *ssid_wl           = "xxxxxxxxxxxxxx";
+const char *ssid_ap           = "webrotor";
+const char *password          =  "xxxxxxxxxxxxx";
 const char *msg_toggle_led    = "toggleLED";
 const char *msg_toggle_CW     = "toggleCW";
 const char *msg_toggle_CCW    = "toggleCCW";
@@ -89,6 +89,8 @@ int stop_state    = 0;
 int analog_val    = 0;
 int analog_val_old = 0;
 int StartBearing   = 0;
+int graden         = 0;
+int allow_bearing  = 0;
 
 boolean LED_state[4] = {0};       // stores the states of the LEDs
 #define Rotor_Msg 10
@@ -234,7 +236,7 @@ void onWebSocketEvent(uint8_t client_num,
         Serial.printf("Sending to [%u]: %s\n", client_num, msg_buf);
         webSocket.broadcastTXT(msg_buf);
 
-          // Report the state of the BRAKE button
+          // Report website ready for bearing data
       } else if ( strcmp((char *)payload, "StartBearing") == 0 ) {
         //sprintf(msg_buf, "%d", brake_state+6);
         //Serial.printf("Sending to [%u]: %s\n", client_num, msg_buf);
@@ -463,7 +465,7 @@ while (WiFi.status() != WL_CONNECTED) {
 
 void read_rotor_bearing(){
       analog_val = analogRead(analog_pin);   
-      analog_val = map(analog_val,4,4096,0,360);  // here is wehere you convert from voltage rotor into degree
+      graden = map(analog_val,4,4096,0,360);  // here is wehere you convert from voltage rotor into degree
       // calibration routine be be written
 }
 
@@ -472,7 +474,7 @@ void emergency_stop(){
    String rotor_stop = String(99);
     
    
-    if ((analog_val < 2) && (ccw_state == 1) ) {
+    if ((analog_val < 10) && (ccw_state == 1) ) {
        Serial.print("CCW STOP value is:");
        Serial.println(analog_val); 
        rotor_stop = String(4);
@@ -483,7 +485,7 @@ void emergency_stop(){
        webSocket.broadcastTXT(rotor_stop);
     delay(500);
 
-    } else if (analog_val > 358 && cw_state == 1 ) {
+    } else if (analog_val > 4092 && cw_state == 1 ) {
         Serial.print("CW STOP value is :");
         Serial.println(analog_val); 
           rotor_stop = String(2);
@@ -500,16 +502,19 @@ void emergency_stop(){
 }
 
 void sent_bearing_ws(){
-     // compare last & current value of bearing. Only sent new data if > 2 degrees.
-    read_rotor_bearing();
-
-    if (analog_val < analog_val_old -2 || analog_val > analog_val_old +2 ) {
+   // compare last & current value of bearing. Only sent new data if > 2 degrees.
+   
+   read_rotor_bearing();
+              allow_bearing = abs(analog_val - analog_val_old);
+              if (allow_bearing < 5 ){
               String rotor = String(analog_val);
               rotor = "Bearing :"+rotor,
               webSocket.broadcastTXT(rotor);
               analog_val_old = analog_val;
-  }
-  emergency_stop();
+              emergency_stop();
+              } else {
+              analog_val_old = analog_val;
+              }
 }
 
 void Task1code( void * pvParameters ){
@@ -531,8 +536,8 @@ void loop() {
   webSocket.loop();
   if (StartBearing > 0) {
   sent_bearing_ws();
-}
-delay(600);  // experimental value, may be incresed or lowered depending on results of page loading and data changes.
+  }
+  delay(600);  // experimental value, may be incresed or lowered depending on results of page loading and data changes.
 }
 
 String getContentType(String filename) { // determine the filetype of a given filename, based on the extension
