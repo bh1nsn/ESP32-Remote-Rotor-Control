@@ -115,6 +115,7 @@ var context;
 var endstop;
     
 var res;
+var old_res;
 var res_stop
 res_stop = 0;
 var Starting_App
@@ -144,7 +145,7 @@ function wsConnect() {
         websocket.onerror = function(evt) { onError(evt) };
         button_brake.disabled = true;
         button_cw.disabled = true;
-        button_ccw.disabled = HTMLOptGroupElement;
+        button_ccw.disabled = true;
         document.getElementById("display_info").innerHTML = "Web Rotor is initiated";
 }
  
@@ -197,24 +198,27 @@ function onMessage(evt) {
          if (res == "Bearing :") {
                 document.getElementById("display").innerHTML = "Rotor receiving bearing data";
                 res = evt.data.substr(9, 3);
-                //console.log("This is bearing data: " + res + " degrees");
+                console.log(res);
                 if ((res_stop =1) && (res <359) && (res > 1)){
    
                         gauge.update({
                         //animation: false,
-                        colorPlate: "green"
+                        colorPlate: "green",
+                        animationDuration: 1500
                         });          
                 }
              
                             if (Starting_App == 0){  
                             console.log("Allowing data to come.");
                             Starting_App = 1;
+                            old_res = res;
                             doSend("StartBearing"); 
                             
                             } else {
+                            display.setValue(res);
                             gauge.value = res;
                             endstop = res;
-                            display.setValue(res);
+                            
                             }
                
          }
@@ -287,7 +291,9 @@ switch(evt.data) {
         case "99":
             //console.log("Plate should be switched to red");  
             gauge.update({
-                colorPlate: "red"
+                
+                colorPlate: "red",
+                animationDuration: 1500
                 });
             res_stop = 1;
             break;
@@ -419,7 +425,7 @@ window.addEventListener("load", init, false);
                 colorNumbers: "#ccc",
                 colorNeedle: "rgba(240, 128, 128, 1)",
                 colorNeedleEnd: "rgba(255, 160, 122, .9)",
-                valueBox: false,
+                valueBox: true,
                 valueTextShadow: false,
                 colorCircleInner: "red",
                 colorNeedleCircleInner: "grey",
