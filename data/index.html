@@ -117,7 +117,7 @@ var button_cw;
 var button_ccw;
 var context;
 var endstop;
-    
+ 
 var res;
 var old_res;
 var res_stop
@@ -155,6 +155,7 @@ function wsConnect() {
  
 // Called when a WebSocket connection is established with the server
 function onOpen(evt) {
+        var gaugeElement = document.getElementsByTagName('canvas')[0];   
 
         // Log connection state
         console.log("Connected to the rotor server");
@@ -167,7 +168,8 @@ function onOpen(evt) {
         //Enable the buttons
         button_brake.disabled = false;
         button_cw.disabled = false;
-        button_ccw.disabled = false;        
+        button_ccw.disabled = false;  
+        
 }
 
 // Called when the WebSocket connection is closed
@@ -183,7 +185,7 @@ function onClose(evt) {
  
 // Called when a message is received from the server
 function onMessage(evt) {
-var gaugeElement = document.getElementsByTagName('canvas')[0];
+var gaugeElement = document.getElementsByTagName('canvas')[0];   
         // Print out our received message
          // cinstruct the bearing value from the string received
         res = evt.data.substr(0, 9);
@@ -195,26 +197,21 @@ var gaugeElement = document.getElementsByTagName('canvas')[0];
                 document.getElementById("display").innerHTML = "Rotor receiving bearing data";
                 res = evt.data.substr(9, 3);
                 console.log("Bearing data sent to webapp: "+res);
-                if ((res_stop =1) && (res <359) && (res > 1)){    
-                }
-                          if (Starting_App == 0){  
+        
+                          if (Starting_App < 3){  
                             console.log("Allowing data to come.");
-                            Starting_App = 1;
-                            doSend("StartBearing"); 
+                            Starting_App++;
+                            //doSend("StartBearing"); 
                             
-                            } else {
-                            display.setValue(res);
-                            //data-value=res;  
-                            //var gaugeElement = document.getElementsByTagName('canvas')[0];
-                                    
-                            if (old_res != res) {
-                            gaugeElement.setAttribute('data-value', res);
-                            old_res = res;
-                            }
-                             
-                            endstop = res;
-                            
-                            }
+                            } else  {
+                                display.setValue(res);
+                                if (old_res != res) {
+                                        gaugeElement.setAttribute('data-value', res);
+                                        old_res = res;
+                                        endstop = res;
+                                       
+                                }
+                              }
                
          }
     
@@ -226,35 +223,30 @@ switch(evt.data) {
         case "1":
         //
             
-// CW switch
+// CCW switch
         case "2":
-            console.log("CW switch is switched to ON");
+            //console.log("CW switch is switched to ON");
            
             document.getElementById("button_ccw").innerHTML='CCW OFF  <span class="s" role="status" aria-hidden="true"></span>';
             document.getElementById("button_cw").innerHTML='CW ON   <span class="spinner-border spinner-border float-right" role="status" aria-hidden="true"></span>';
             break;
             
          case "3":
-            console.log("CW switch is switched to OFF");
+            //console.log("CW switch is switched to OFF");
             document.getElementById("button_cw").innerHTML='CW OFF   <span class="" role="status" aria-hidden="true"></span>'; 
             break;  
-      
+// CW switch  
         case "4":
-
-            console.log("CCW switch is switched to ON");
+            //console.log("CCW switch is switched to ON");
             document.getElementById("button_cw").innerHTML='CW OFF   <span class="s" role="status" aria-hidden="true"></span>';
-           
-
             document.getElementById("button_ccw").innerHTML='CCW ON  <span class="spinner-border spinner-border float-right " role="status" aria-hidden="true"></span>';
             break;
    
-  
         case "5":
-            console.log("CCW switch is is switched to OFF");
+            //console.log("CCW switch is is switched to OFF");
             document.getElementById("button_ccw").innerHTML='CCW OFF  <span class="" role="status" aria-hidden="true"></span>'; 
             break;  
   
-
 // BRAKE switch
        case "6":
            var cw_status;
@@ -279,7 +271,7 @@ switch(evt.data) {
             button_ccw.disabled = true;
             break;
          case "7":
-            console.log("Brake is switched to OFF");
+            //console.log("Brake is switched to OFF");
             document.getElementById("button_brake").innerHTML = "BRAKE OFF";
             button_cw.disabled = false;
             button_ccw.disabled = false;
@@ -289,6 +281,9 @@ switch(evt.data) {
         case "99":
             //console.log("Plate should be switched to red");  
             res_stop = 1;
+            document.getElementById("display").innerHTML = "Rotor reached endstop CCW";
+            GetRotorBearing();
+            
             break;
         default:
             break;
@@ -408,9 +403,9 @@ window.addEventListener("load", init, false);
         data-title="ANTENNA BEARING"
         data-font-title-size="19"
         data-color-title="#f5f5f5"
-        data-animation-duration="1800"
+        data-animation-duration="400"
         data-value="0"
-        data-animate-on-init="true"
+        data-animate-on-init="false"
         
 ></canvas>
 
