@@ -23,12 +23,12 @@ In case you have a rotor brake and apply this break, first any turning is stoppe
 
 # Compass indicator
 
-Every rotor to be used should have a build in potentiometer of approx. 500 Ohm.
+Every rotor to be used should have a build in potentiometer (Mine is approx. 500 Ohm).
 Connect one side to GND and the other side to the 3.3V of the ESP32. Connect the middle pin to pin 34 of the ESP32.
 The values of the ADC1 are then converted from 0-4096, into 0 - 360 degrees.
-Since the ADC is not 100% linear, you may have to put some small resistors from GND to the potentiometer as well as from 3.3V to the potentiometer. This is still WIP on my side/
+Since the ADC is not 100% linear, you may have to put some small resistors from GND to the potentiometer as well as from 3.3V to the potentiometer. This is still WIP on my side.
 
-A small capacitor of 1nF helps to remove some noise but you may experiment with other values. Currently I have a 1 nF and a 10uF in parallel connected to pun 34 (the ADC channels used for the bearing)
+A small capacitor of 1nF helps to remove some noise but you may experiment with other values. Currently I have a 1 nF and a 10uF in parallel connected to pin 34 (the ADC channel used for the bearing)
 
 
 # In the making:
