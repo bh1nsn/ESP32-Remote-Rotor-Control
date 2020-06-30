@@ -6,11 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
     <!-- Bootstrap CSS -->
+          
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="jquery.slim.min.js"></script>
+    <script type="text/javascript" src="jquery.slim.min.js"></script>
     <script type="text/javascript" src="gauge.min.js"></script>
     <script type="text/javascript" src="segment-display.js"></script>
-    <link rel="stylesheet" href="bootstrap.min.css">
+    <script type="text/javascript" src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+ 
+          
+
+    
 
   </head>
 <style>
@@ -133,7 +139,7 @@ function init() {
  
 // Call to connect to the WebSocket server
 function wsConnect() {
-        var url = "ws://192.168.178.85:1337/";
+        var url = "ws://webrotor.local:1337/";
         // Connect to WebSocket server
         websocket = new WebSocket(url);
         //websocket = new WebSocket(((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + ":1337");
@@ -166,6 +172,7 @@ function onOpen(evt) {
 
 // Called when the WebSocket connection is closed
 function onClose(evt) {
+    var url = "ws://webrotor.local:1337/";
     // Log disconnection state
     // console.log("Disconnected");
     document.getElementById("display_info").innerHTML = "Rotor disconnected, retrying";
@@ -187,20 +194,24 @@ var gaugeElement = document.getElementsByTagName('canvas')[0];
          if (res == "Bearing :") {
                 document.getElementById("display").innerHTML = "Rotor receiving bearing data";
                 res = evt.data.substr(9, 3);
-                console.log(res);
+                console.log("Bearing data sent to webapp: "+res);
                 if ((res_stop =1) && (res <359) && (res > 1)){    
                 }
                           if (Starting_App == 0){  
                             console.log("Allowing data to come.");
                             Starting_App = 1;
-                            old_res = res;
                             doSend("StartBearing"); 
                             
                             } else {
                             display.setValue(res);
                             //data-value=res;  
                             //var gaugeElement = document.getElementsByTagName('canvas')[0];
+                                    
+                            if (old_res != res) {
                             gaugeElement.setAttribute('data-value', res);
+                            old_res = res;
+                            }
+                             
                             endstop = res;
                             
                             }
@@ -348,29 +359,11 @@ window.addEventListener("load", init, false);
     
 <body>
 <div class="imageH">
-         <!-- Navigation -->
-      <nav class="navbar navbar-expand-lg navbar-dark bg-dark static-top">
-        <div class="container-fluid">
-          <a class="navbar-brand" href="#">Web Rotor Controller</a>
-          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-          </button>
-          <div class="collapse navbar-collapse" id="navbarResponsive">
-            <ul class="navbar-nav ml-auto">
-              <li class="nav-item active">
-                <a class="nav-link" href="/index.html">Home
-                  <span class="sr-only">(current)</span>
-                </a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="/update">Update OTA</a>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </nav>    
-
-
+ 
+        
+ 
+  
+  
     <div class="container-fluid">
         <div class="col-sm text-center">  
             <br>
@@ -454,7 +447,7 @@ window.addEventListener("load", init, false);
                <!-- Footer -->
         <footer id="sticky-footer" class="py-4 bg-dark text-white-50">
             <div class="container text-center" >
-            <small>GNU licence &copy; 2020 PA0ESH - V1.5</small>
+            <small>GNU licence &copy; 2020 PA0ESH - V1.6</small>
             </div>
       </footer>
     
@@ -492,6 +485,7 @@ function showError(error) {
 }
 </script>
 
+  
 
     </body>
 </html>
