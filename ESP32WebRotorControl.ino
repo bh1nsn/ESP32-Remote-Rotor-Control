@@ -58,9 +58,9 @@
 
 const char* host = "webrotor";
 const char *default_instance  = "Web Rotor Controller by PA0ESH";
-const char *ssid_wl           = "xxxxxxxxxxxxxxxx";  //Your home WiFi network name
-const char *ssid_ap           = "webrotor";          //Your acces point network name on 2.4 Ghz
-const char *password          = "xxxxxxxxxxxx";      //Your home WiFi network password and the password for the acces point
+const char *ssid_wl           = "Kotona-Boven-2.4";
+const char *ssid_ap           = "webrotor";
+const char *password          =  "Stt1951_mrs";
 const char *msg_toggle_led    = "toggleLED";
 const char *msg_toggle_CW     = "toggleCW";
 const char *msg_toggle_CCW    = "toggleCCW";
@@ -287,12 +287,44 @@ void onCSSRequest(AsyncWebServerRequest *request) {
   request->send(SPIFFS, "/bootstrap.min.css", "text/css");
 }
 
+// Callback: send css
+void onBMMRequest(AsyncWebServerRequest *request) {
+  IPAddress remote_ip = request->client()->remoteIP();
+  Serial.println("[" + remote_ip.toString() +
+                  "] HTTP GET request of " + request->url());
+  request->send(SPIFFS, "/bootstrap.min.css.map", "text/css");
+}
+
+// Callback: send css
+void onXCRequest(AsyncWebServerRequest *request) {
+  IPAddress remote_ip = request->client()->remoteIP();
+  Serial.println("[" + remote_ip.toString() +
+                  "] HTTP GET request of " + request->url());
+  request->send(SPIFFS, "/xcode.css", "text/css");
+}
+
+// Callback: send css
+void onZHMRequest(AsyncWebServerRequest *request) {
+  IPAddress remote_ip = request->client()->remoteIP();
+  Serial.println("[" + remote_ip.toString() +
+                  "] HTTP GET request of " + request->url());
+  request->send(SPIFFS, "/ziehharmonika.css", "text/css");
+}
+
+// Callback: send css
+void onZHJSRequest(AsyncWebServerRequest *request) {
+  IPAddress remote_ip = request->client()->remoteIP();
+  Serial.println("[" + remote_ip.toString() +
+                  "] HTTP GET request of " + request->url());
+  request->send(SPIFFS, "/ziehharmonika.js", "application/javascript");
+}
+
 // Callback: send javascript standard functions
 void onJSRequest(AsyncWebServerRequest *request) {
   IPAddress remote_ip = request->client()->remoteIP();
   Serial.println("[" + remote_ip.toString() +
                   "] HTTP GET request of " + request->url());
-  request->send(SPIFFS, "/jquery.slim.min.js", "application/javascript");
+  request->send(SPIFFS, "/jquery.js", "application/javascript");
 }
 
 // Callback: send javascript gauge meter
@@ -303,6 +335,14 @@ void onJGRequest(AsyncWebServerRequest *request) {
   request->send(SPIFFS, "/gauge.min.js", "application/javascript");
 }
 
+// Callback: send javascript gauge meter
+void onBMRequest(AsyncWebServerRequest *request) {
+  IPAddress remote_ip = request->client()->remoteIP();
+  Serial.println("[" + remote_ip.toString() +
+                  "] HTTP GET request of " + request->url());
+  request->send(SPIFFS, "/bootstrap.min.js", "application/javascript");
+}
+
 //Callback: send javascript segment-display
 void on7SEGRequest(AsyncWebServerRequest *request) {
   IPAddress remote_ip = request->client()->remoteIP();
@@ -310,6 +350,16 @@ void on7SEGRequest(AsyncWebServerRequest *request) {
                   "] HTTP GET request of " + request->url());
   request->send(SPIFFS, "/segment-display.js", "application/javascript");
 }
+
+
+//Callback: send javascript segment-display
+void onHLPRequest(AsyncWebServerRequest *request) {
+  IPAddress remote_ip = request->client()->remoteIP();
+  Serial.println("[" + remote_ip.toString() +
+                  "] HTTP GET request of " + request->url());
+  request->send(SPIFFS, "/highlight.pack.js", "application/javascript");
+}
+
 
 // Callback: send javascript gauge meter
 void onMPRequest(AsyncWebServerRequest *request) {
@@ -418,15 +468,36 @@ while (WiFi.status() != WL_CONNECTED) {
  // On HTTP request for update.html file
   server.on("/", HTTP_GET, onUPDATERequest);
  
-
   // On HTTP request for style sheet, provide style.css
   server.on("/bootstrap.min.css", HTTP_GET, onCSSRequest);
 
+// On HTTP request for style sheet, provide style.css
+  server.on("/bootstrap.min.css.map", HTTP_GET, onBMMRequest);
+
+// On HTTP request for style sheet, provide style.css
+  server.on("/xcode.css", HTTP_GET, onXCRequest);
+
+
+// On HTTP request for ziehharmonika.css, provide 
+  server.on("/ziehharmonika.css", HTTP_GET, onZHMRequest);
+
+  // On HTTP request for ziehharmonika.css, provide 
+  server.on("/ziehharmonika.js", HTTP_GET, onZHJSRequest);
+
+
+// On HTTP request for highlight_pack.js, provide 
+  server.on("/highlight.pack.js", HTTP_GET, onHLPRequest);
+
+
  // On HTTP request for jquery, provide 
-  server.on("/jquery.slim.min.js", HTTP_GET, onJSRequest);
+  server.on("/jquery.js", HTTP_GET, onJSRequest);
 
 // On HTTP request for gauge js
   server.on("/gauge.min.js", HTTP_GET, onJGRequest);
+
+// On HTTP request for gauge js
+  server.on("/bootstrap.min.js", HTTP_GET, onBMRequest);
+
 
 // On HTTP request for connect.mp3 js
   server.on("/connected.mp3", HTTP_GET, onMPRequest);
@@ -440,7 +511,7 @@ while (WiFi.status() != WL_CONNECTED) {
 // On HTTP request for europe.jpg
   server.on("/europe.jpg", HTTP_GET, onJPGRequest);
 
-  // On HTTP request for europe.jpg
+  // On HTTP request for 7-segment display
   server.on("/segment-display.js", HTTP_GET, on7SEGRequest);
 
 
@@ -465,22 +536,25 @@ while (WiFi.status() != WL_CONNECTED) {
 // Rotor bearing values taken from 500 ohm potentiometer - middle pin connects to 34
 void read_rotor_bearing(){
       analog_val = analogRead(analog_pin);   
-      graden = map(analog_val,10,4020 ,0,360);  // here is wehere you convert from voltage rotor into degree
+      graden = map(analog_val,10,4040 ,0,360);  // here is wehere you convert from voltage rotor into degree
       // calibration routine to be be written still
 }
 
 // emergenct stop routine if rotor get's to end stop values.
 void emergency_stop(){
-    String rotor_stop = String(99);
-     if ((analog_val < 20) && (ccw_state == 0) ) {
-       Serial.print("The STOP value is:");
-       Serial.println(analog_val); 
+       //Serial.print("The STOP value is:");
+       //Serial.println(analog_val); 
+       //sprintf(msg_buf, "%d", ccw_state);
+       //Serial.printf("The CCW state is : %s\n", msg_buf);
+        String rotor_stop = String(99);
+       if ((analog_val < 60) && (ccw_state == 0) ) {
+       rotor_stop = String(99);
+       webSocket.broadcastTXT(rotor_stop);
        rotor_stop = String(5);
        ccw_state = 1;
        digitalWrite(ccw_pin, ccw_state);
        webSocket.broadcastTXT(rotor_stop);
-       rotor_stop = String(99);
-       webSocket.broadcastTXT(rotor_stop);
+       
       delay(500);
 
     } else if (analog_val > 4000 && cw_state == 0 ) {
@@ -514,14 +588,4 @@ void loop() {
   webSocket.loop();
   sent_bearing_ws();
 delay(600);  // experimental value, may be incresed or lowered depending on results of page loading and data changes.
-}
-
-String getContentType(String filename) { // determine the filetype of a given filename, based on the extension
-  if (filename.endsWith(".html")) return "text/html";
-  else if (filename.endsWith(".css")) return "text/css";
-  else if (filename.endsWith(".js")) return "application/javascript";
-  else if (filename.endsWith(".ico")) return "image/x-icon";
-  else if (filename.endsWith(".jpg")) return "image/x-icon";
-  else if (filename.endsWith(".gz")) return "application/x-gzip";
-  return "text/plain";
 }

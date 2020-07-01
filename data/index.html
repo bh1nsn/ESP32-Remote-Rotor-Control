@@ -8,12 +8,21 @@
     <!-- Bootstrap CSS -->
           
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="xcode.css">
+	<link rel="stylesheet" href="ziehharmonika.css">
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script type="text/javascript" src="jquery.slim.min.js"></script>
     <script type="text/javascript" src="gauge.min.js"></script>
     <script type="text/javascript" src="segment-display.js"></script>
-    <script type="text/javascript" src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
- 
+    
+
+
+<style>
+     	
+        h3 {
+			font-weight: normal;
+			font-size: 16px;
+		}
+</style>
           
 
     
@@ -140,6 +149,7 @@ function init() {
 // Call to connect to the WebSocket server
 function wsConnect() {
         var url = "ws://webrotor.local:1337/";
+        var gaugeElement = document.getElementsByTagName('canvas')[0];   
         // Connect to WebSocket server
         websocket = new WebSocket(url);
         //websocket = new WebSocket(((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + ":1337");
@@ -150,7 +160,8 @@ function wsConnect() {
         button_brake.disabled = true;
         button_cw.disabled = true;
         button_ccw.disabled = true;
-        document.getElementById("display_info").innerHTML = "Web Rotor is initiated";
+        gaugeElement.setAttribute('data-units', "Websocket initiated");
+        ////document.getElementById("display_info").innerHTML = "Web Rotor is initiated";
 }
  
 // Called when a WebSocket connection is established with the server
@@ -159,7 +170,9 @@ function onOpen(evt) {
 
         // Log connection state
         console.log("Connected to the rotor server");
-        document.getElementById("display_info").innerHTML = "Web Rotor receiving data";
+        gaugeElement.setAttribute('data-units', "Receiving data");
+        ////document.getElementById("display_info").innerHTML = "Web Rotor receiving data";
+        
         // Get the current position from the rotor
         //doSend("getBEARINGState"); 
         doSend("getBRAKEState");
@@ -174,10 +187,13 @@ function onOpen(evt) {
 
 // Called when the WebSocket connection is closed
 function onClose(evt) {
+var gaugeElement = document.getElementsByTagName('canvas')[0];   
+
     var url = "ws://webrotor.local:1337/";
     // Log disconnection state
     // console.log("Disconnected");
-    document.getElementById("display_info").innerHTML = "Rotor disconnected, retrying";
+        gaugeElement.setAttribute('data-units', "Disconnected, retrying");
+    ////document.getElementById("display_info").innerHTML = "Rotor disconnected, retrying";
     // display.setValue('000');
     // Try to reconnect after a few seconds
     wsConnect(url);
@@ -194,7 +210,7 @@ var gaugeElement = document.getElementsByTagName('canvas')[0];
         //console.log("Received message |" + res_msg+"|");
 
          if (res == "Bearing :") {
-                document.getElementById("display").innerHTML = "Rotor receiving bearing data";
+                //document.getElementById("display").innerHTML = "Rotor receiving bearing data";
                 res = evt.data.substr(9, 3);
 
                 console.log("Bearing data sent to webapp: "+res);
@@ -295,7 +311,7 @@ switch(evt.data) {
 // Called when a WebSocket error occurs
 function onError(evt) {
     //console.log("ERROR: " + evt.data);
-       document.getElementById("display_info").innerHTML = "Unknow error, please reload page";
+       ////document.getElementById("display_info").innerHTML = "Unknow error, please reload page";
 
 }
  
@@ -311,9 +327,9 @@ function onPressButton(x) {
         case 1:
                 if (endstop > 358) {
                 //console.log("Going CW with rotorvalue: " + endstop);
-                document.getElementById("display_info").innerHTML = "CW Endstop reached!";
+                //document.getElementById("display_info").innerHTML = "CW Endstop reached!";
                 } else {
-                document.getElementById("display_info").innerHTML = "Rotor receiving bearing data";
+                //document.getElementById("display_info").innerHTML = "Rotor receiving bearing data";
                 doSend("toggleCW");
                 doSend("getCWState");
                 }
@@ -321,9 +337,9 @@ function onPressButton(x) {
         case 2:
             if (endstop <= 2) {
                //console.log("Going CCW with rotorvalue: " + endstop);
-                document.getElementById("display_info").innerHTML = "CCW endstop reached!";
+                //document.getElementById("display_info").innerHTML = "CCW endstop reached!";
             } else {
-                document.getElementById("display_info").innerHTML = "Rotor receiving bearing data";
+                //document.getElementById("display_info").innerHTML = "Rotor receiving bearing data";
                 doSend("toggleCCW");
                 doSend("getCCWState");
             }
@@ -351,22 +367,17 @@ function GetRotorBearing()
 window.addEventListener("load", init, false);
  
 </script>
- 
+
     
 <body>
 <div class="imageH">
- 
-        
- 
-  
-  
     <div class="container-fluid">
         <div class="col-sm text-center">  
             <br>
             <center>
 <canvas data-type="radial-gauge"
-        data-width="300"
-        data-height="300"
+        data-width="250"
+        data-height="250"
         data-min-value="0"
         data-max-value="360"
         data-major-ticks="N,NO,O,ZO,Z,ZW,W,NW,N"
@@ -403,6 +414,8 @@ window.addEventListener("load", init, false);
         data-units="PA0ESH"
         data-title="ANTENNA BEARING"
         data-font-title-size="19"
+        data-color-units="#00ff1d"
+        data-font-units-size="14"
         data-color-title="#f5f5f5"
         data-animation-duration="400"
         data-value="0"
@@ -416,29 +429,93 @@ window.addEventListener("load", init, false);
         </div>
     </div>
 
-
+<!-- 7 Segment display -->
     <div class="container-fluid">
         <div class="row">
-            <div class="col-sm text-center">
-                <!--<button onclick="showLoc();">Show location properties</button> -->
-                
-                <center>
-                         
-                        <canvas id="display" width="120" height="34" align = "right"></canvas>
-                        
-                    </center>
-                      
-  
-                    <div class="btn-group-vertical" align="center" role="group" aria-label="" style="padding-bottom: 15px;">
-                        <div class="alert alert-light custom1" role="alert" id = "display_info">.....</div>
-                      <button type="button" class="btn btn-primary btn-lg custom1" id="button_ccw" onclick="onPressButton(2)">CCW OFF</button>
-                        <button type="button" class="btn btn-primary btn-lg custom1" id="button_cw" onclick="onPressButton(1)">CW OFF</button>
-                        <button type="button" class="btn btn-danger custom1 btn-lg" data-toggle="popover" id="button_brake" onclick="onPressButton(3)">BRAKE OFF</button> 
-                    </div>
-                 
+            <div class="col-sm text-center">         
+                <center>                     
+                        <canvas id="display" width="120" height="34" align = "right"></canvas>                   
+                </center>                  
              </div>
         </div>
     </div>
+	<div class="container"> <!-- begin container zieharmonika -->
+            <div class="ziehharmonika" >  
+			<h3>BUTTON CONTROL</h3>
+                <div class="col-sm text-center" style="padding-top: 5px; padding-bottom: 5px">
+                        <div class="btn-group-vertical" align="center" role="group" aria-label="" style="padding-bottom: 0px" style="padding-top: 0px">
+                                <button type="button" class="btn btn-primary btn-lg custom1" id="button_ccw" onclick="onPressButton(2)" >CCW OFF</button>
+                                <button type="button" class="btn btn-primary btn-lg custom1" id="button_cw" onclick="onPressButton(1)">CW OFF</button>
+                                <button type="button" class="btn btn-danger custom1 btn-lg" data-toggle="popover" id="button_brake" onclick="onPressButton(3)">BRAKE OFF</button> 
+                        </div>
+                </div>
+			<h3>TEXT CONTROL</h3>
+                <div class="col-sm text-center" style="padding-top: 5px; padding-bottom: 5px">
+                          <div class="col-sm text-center">
+                                
+                                <input id="bearing_val" name="bearing_val" type="text" placeholder="degrees" class="form-control input-md" required="">
+                                <br>
+                                <button id="rot_but" name="rot_but" class="btn btn-primary">Rotate</button>
+                        
+                        </div>
+                </div>
+		<h3>CONFIGURATION</h3>
+            <div class="col-sm text-center" style="padding-top: 5px; padding-bottom: 5px">
+                          <div class="col-sm text-center">
+  
+
+      <h5 align="center">User Settings</h5> 
+        <div class="input-group mb-3 input-group-sm">
+                <div class="input-group-prepend">
+                        <span class="input-group-text">Callsign</span>
+                </div>
+                <input id="usr1" type="text" class="form-control">
+        </div>
+               <div class="input-group mb-3 input-group-sm">
+                <div class="input-group-prepend">
+                <span class="input-group-text">Lat</span>
+                </div>
+                <input id="usr1" type="text" class="form-control">
+     
+                <div class="input-group mb-3 input-group-sm">
+                <div class="input-group-prepend">
+                <span class="input-group-text">Lon</span>
+                </div>
+                <input id="usr1" type="text" class="form-control">
+        </div>
+                <div class="input-group mb-3 input-group-sm">               
+                  <div class="input-group-prepend">
+                    <label class="input-group-text" for="inputGroupSelect01">Interface</label>
+                  </div>
+                  <select class="custom-select" id="inputGroupSelect01">
+                    <option selected>Choose...</option>
+                    <option value="1">VERON/VRZA</option>
+                    <option value="2">WINTEST</option>
+                    <option value="3">HRD</option>
+                  </select>
+                </div>
+    </div>
+  </div>
+</div>
+
+		</div> 
+</div> <!-- end container zieharmonika -->
+
+	<script src="jquery.js"></script>
+    <script type="text/javascript" src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+	<script src="highlight.pack.js"></script>
+	<script>hljs.initHighlightingOnLoad();</script>
+	<script src="ziehharmonika.js"></script>
+	<script>
+            $(document).ready(function() {
+		$('.ziehharmonika').ziehharmonika({
+			collapsible: true,
+			prefix: '★'
+		});
+
+	
+	});
+	</script>
 </div>
         
                <!-- Footer -->
@@ -448,39 +525,6 @@ window.addEventListener("load", init, false);
             </div>
       </footer>
     
-<script>
-var x = document.getElementById("demo");
-
-function getLocation() {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(showPosition, showError);
-  } else { 
-    x.innerHTML = "Geolocation is not supported by this browser.";
-  }
-}
-
-function showPosition(position) {
-  x.innerHTML = "Latitude: " + position.coords.latitude + 
-  "<br>Longitude: " + position.coords.longitude;
-}
-
-function showError(error) {
-  switch(error.code) {
-    case error.PERMISSION_DENIED:
-      x.innerHTML = "User denied the request for Geolocation."
-      break;
-    case error.POSITION_UNAVAILABLE:
-      x.innerHTML = "Location information is unavailable."
-      break;
-    case error.TIMEOUT:
-      x.innerHTML = "The request to get user location timed out."
-      break;
-    case error.UNKNOWN_ERROR:
-      x.innerHTML = "An unknown error occurred."
-      break;
-  }
-}
-</script>
 
   
 
