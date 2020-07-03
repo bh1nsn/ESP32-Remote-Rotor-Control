@@ -166,21 +166,26 @@ void onWebSocketEvent(uint8_t client_num,
 
 // Toggle CW
       } else if ( strcmp((char *)payload, "toggleCW") == 0 ) {
-
-        if (brake_state == 0){
+       if (brake_state == 0){
         exit;
         } else {
-        Serial.println("Starting the CCW switch check");
+        Serial.println("Starting the CW switch check");
         Serial.printf("CCW_State is  %u\n", ccw_state);
+        Serial.printf("CW_State is  %u\n", cw_state);
         if (ccw_state == 0){
-        ccw_state=1;
-         digitalWrite(ccw_pin, ccw_state);
-         delay(200);
-        }
-       cw_state = !cw_state;
+             ccw_state=1;
+             digitalWrite(ccw_pin, ccw_state);
+             delay(200);
+            }
+        Serial.printf("De CW state is now  %u\n", cw_state);
+        cw_state = !cw_state;
         Serial.printf("Toggling CW switch to %u\n", cw_state);
+        
         digitalWrite(cw_pin, cw_state);
+         Serial.printf("De CW state is now %u\n", cw_state);
         }
+
+        
    // Toggle BRAKE
       } else if ( strcmp((char *)payload, "toggleBRAKE") == 0 ) {
         brake_state = !brake_state;
@@ -518,7 +523,7 @@ void read_rotor_bearing(){
 
 void stop_manual(){
 
- if (cw_state == 0 && set_azi < graden) {
+ if (cw_state == 0 && set_man ==1 && graden > set_azi) {
                // stop the cw rotation
                cw_state=1;
                digitalWrite(cw_pin, cw_state);
@@ -530,9 +535,10 @@ void stop_manual(){
                webSocket.broadcastTXT(rotor);
                Serial.print("Rotor stopped at : ");
                Serial.println(graden);
+               set_man=0;
                delay(500);
   
- }  else if (ccw_state ==0 && set_azi > graden){
+ }  else if (ccw_state ==0 && set_man ==1 && graden < set_azi){
                ccw_state=1;
                digitalWrite(ccw_pin, ccw_state);
                Serial.printf("De CCW state was switched to %u\n", cw_state);
@@ -543,6 +549,7 @@ void stop_manual(){
                rotor = String(graden);
                rotor = "Bearing :"+rotor,
                webSocket.broadcastTXT(rotor);
+               set_man=0;
                delay(500);
   }
  }
