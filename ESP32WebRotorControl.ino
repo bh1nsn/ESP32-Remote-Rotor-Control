@@ -171,7 +171,7 @@ void onWebSocketEvent(uint8_t client_num,
         exit;
         } else {
         Serial.println("Starting the CCW switch check");
-        Serial.printf("CCW_State is  %u\n", cw_state);
+        Serial.printf("CCW_State is  %u\n", ccw_state);
         if (ccw_state == 0){
         ccw_state=1;
          digitalWrite(ccw_pin, ccw_state);
