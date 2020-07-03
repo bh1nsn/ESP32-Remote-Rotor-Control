@@ -143,6 +143,7 @@ var res_stop;
 res_stop = 0;
 var Starting_App
 Starting_App = 0;
+var online =0;
     
 // switching the brake colour
 
@@ -160,14 +161,32 @@ function init() {
     wsConnect();
 }
  
+function checkServerStatus()
+{
+    var img = document.createElement("img");
+    img.onload = function()
+    {
+        online=1;
+    };
+    img.onerror = function()
+    {
+        online=0;
+    };
+    img.src = "http://webrotor.local/europe.jpg";
+}
+
+
+        
 // Call to connect to the WebSocket server
 function wsConnect() {
         var gaugeElement = document.getElementsByTagName('canvas')[0];   
         var url = "ws://webrotor.local:1337/";
-        //var gaugeElement = document.getElementsByTagName('canvas')[0];   
-        // Connect to WebSocket server
-        websocket = new WebSocket(url);
-        //websocket = new WebSocket(((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + ":1337");
+        checkServerStatus();
+        if (online == 0) {
+                        websocket = new WebSocket(url);
+       } else {
+                        websocket = new WebSocket(((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + ":1337");        
+         }
         websocket.onopen = function(evt) { onOpen(evt) };
         websocket.onmessage = function(evt) { onMessage(evt) };
         websocket.onclose = function(evt) { onClose(evt) };
@@ -219,13 +238,12 @@ var gaugeElement = document.getElementsByTagName('canvas')[0];
     ////document.getElementById("display_info").innerHTML = "Rotor disconnected, retrying";
     // display.setValue('000');
     // Try to reconnect after a few seconds
-    wsConnect(url);
+    wsConnect();
 }
  
 // Called when a message is received from the server
 function onMessage(evt) {
 var gaugeElement = document.getElementsByTagName('canvas')[0]; 
- gaugeElement.setAttribute('data-units','Data received !');
 
         // construct the bearing value from the string received
         res = evt.data.substr(0, 9);
@@ -357,11 +375,11 @@ function onPressButton(x) {
 var gaugeElement = document.getElementsByTagName('canvas')[0]; 
     switch(x){
         case 1:
-                if (endstop => 359) {
+                if (endstop >= 359) {
                 //console.log("Going CW with rotorvalue: " + endstop);
                  gaugeElement.setAttribute('data-units','CW Endstop reached!');
                 } else {
-                //document.getElementById("display_info").innerHTML = "Rotor receiving bearing data";
+                gaugeElement.setAttribute('data-units','Turning CW !!');
                 doSend("toggleCW");
                 doSend("getCWState");
                
@@ -372,7 +390,7 @@ var gaugeElement = document.getElementsByTagName('canvas')[0];
                //console.log("Going CCW with rotorvalue: " + endstop);
                 gaugeElement.setAttribute('data-units','CCW Endstop reached!');
             } else {
-                //document.getElementById("display_info").innerHTML = "Rotor receiving bearing data";
+                gaugeElement.setAttribute('data-units','Turning CCW !!');
                 doSend("toggleCCW");
                 doSend("getCCWState");
                     
@@ -400,7 +418,7 @@ var gaugeElement = document.getElementsByTagName('canvas')[0];
                         // send a command yo the esp and handle it there.
                         console.log("Starting to turn CW ");    
                         var set_msg = "MANUAL:"+set_azimuth;
-                        console.log("Manual rotating to :"+set_msg+" DEG.");
+                        console.log("Rotating method :"+set_msg+" DEG.");
                         gaugeElement.setAttribute('data-units',set_msg+" DEG");
                         doSend(set_msg);
                         doSend("toggleCW");
@@ -417,7 +435,7 @@ var gaugeElement = document.getElementsByTagName('canvas')[0];
                 console.log("Starting to turn CCW ");    
                 var set_msg = "MANUAL:"+set_azimuth;
                 gaugeElement.setAttribute('data-units',set_msg+" DEG");
-                console.log("Manual rotating to :"+set_msg +" DEG.");
+                console.log("Rotating method :"+set_msg +" DEG.");
                 doSend(set_msg); 
                 doSend("toggleCCW");
                 doSend("getCCWState");
