@@ -239,9 +239,7 @@ void onWebSocketEvent(uint8_t client_num,
 
           // Report the state of the BRAKE button
       } else if ( strcmp((char *)payload, "StartBearing") == 0 ) {
-        //sprintf(msg_buf, "%d", brake_state+6);
-        //Serial.printf("Sending to [%u]: %s\n", client_num, msg_buf);
-        StartBearing = 1;
+         StartBearing = 1;
  
       // Message not recognized
       } else {
@@ -542,10 +540,6 @@ void read_rotor_bearing(){
 
 // emergenct stop routine if rotor get's to end stop values.
 void emergency_stop(){
-       //Serial.print("The STOP value is:");
-       //Serial.println(analog_val); 
-       //sprintf(msg_buf, "%d", ccw_state);
-       //Serial.printf("The CCW state is : %s\n", msg_buf);
         String rotor_stop = String(99);
        if ((analog_val < 60) && (ccw_state == 0) ) {
        rotor_stop = String(99);
