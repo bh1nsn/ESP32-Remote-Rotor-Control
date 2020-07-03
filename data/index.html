@@ -22,6 +22,7 @@
 			font-weight: normal;
 			font-size: 16px;
 		}
+
 </style>
           
 
@@ -38,7 +39,12 @@
 */
 
     
-    
+.modal-content{        
+        background-color:#f0431a !important;
+        color: aliceblue;
+        } 
+        
+        
 .btn:focus {
   outline: none;
   box-shadow: none;
@@ -101,7 +107,9 @@ html,body{
 
     
 <script type="text/javascript">
-    
+        
+
+var gaugeElement = document.getElementsByTagName('canvas')[0];   
 // creating the 7-segment bearing indicator with numbers
 var display = new SegmentDisplay("display");
 display.pattern         = "###";
@@ -121,25 +129,31 @@ display.draw();
 // websocket connect info - define fuction to obtain websocket ip on the fly
 
 //var output;
-var button_brake;
+var brake;
 var button_cw;
 var button_ccw;
 var context;
 var endstop;
+var loop_azimuth;
+var set_azimuth
  
 var res;
 var old_res;
-var res_stop
+var res_stop;
 res_stop = 0;
 var Starting_App
 Starting_App = 0;
     
+// switching the brake colour
 
 
 // This is called when the page finishes loading
 function init() {
     // Assign page elements to variables
-    button_brake = document.getElementById("button_brake");
+    brake = document.getElementById("brake");
+    brake1 = document.getElementById("brake1");   
+    rot_but = document.getElementById("rot_but");
+    rot_val = document.getElementById("rot_val");
     button_cw = document.getElementById("button_cw");
     button_ccw = document.getElementById("button_ccw");
     // Connect to WebSocket server
@@ -148,8 +162,9 @@ function init() {
  
 // Call to connect to the WebSocket server
 function wsConnect() {
-        var url = "ws://webrotor.local:1337/";
         var gaugeElement = document.getElementsByTagName('canvas')[0];   
+        var url = "ws://webrotor.local:1337/";
+        //var gaugeElement = document.getElementsByTagName('canvas')[0];   
         // Connect to WebSocket server
         websocket = new WebSocket(url);
         //websocket = new WebSocket(((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + ":1337");
@@ -157,17 +172,21 @@ function wsConnect() {
         websocket.onmessage = function(evt) { onMessage(evt) };
         websocket.onclose = function(evt) { onClose(evt) };
         websocket.onerror = function(evt) { onError(evt) };
-        button_brake.disabled = true;
+        brake.disabled = true;
+        brake1.disabled = true;
         button_cw.disabled = true;
         button_ccw.disabled = true;
-        gaugeElement.setAttribute('data-units', "Websocket initiated");
+        rot_val.disabled = true;
+        rot_but.disabled = true;
+        
+        gaugeElement.setAttribute('data-units', "Websocket starting up");
         ////document.getElementById("display_info").innerHTML = "Web Rotor is initiated";
 }
  
 // Called when a WebSocket connection is established with the server
 function onOpen(evt) {
+        
         var gaugeElement = document.getElementsByTagName('canvas')[0];   
-
         // Log connection state
         console.log("Connected to the rotor server");
         gaugeElement.setAttribute('data-units', "Receiving data");
@@ -179,9 +198,13 @@ function onOpen(evt) {
         doSend("getCWState");
         doSend("getCCWState");
         //Enable the buttons
-        button_brake.disabled = false;
+        brake.disabled = false;
+        brake1.disabled = false;
         button_cw.disabled = false;
-        button_ccw.disabled = false;  
+        button_ccw.disabled = false;
+        rot_val.disabled = false;
+        rot_but.disabled = false;
+ 
         
 }
 
@@ -192,7 +215,7 @@ var gaugeElement = document.getElementsByTagName('canvas')[0];
     var url = "ws://webrotor.local:1337/";
     // Log disconnection state
     // console.log("Disconnected");
-        gaugeElement.setAttribute('data-units', "Disconnected, retrying");
+    gaugeElement.setAttribute('data-units', "Disconnected, retrying");
     ////document.getElementById("display_info").innerHTML = "Rotor disconnected, retrying";
     // display.setValue('000');
     // Try to reconnect after a few seconds
@@ -201,19 +224,19 @@ var gaugeElement = document.getElementsByTagName('canvas')[0];
  
 // Called when a message is received from the server
 function onMessage(evt) {
-var gaugeElement = document.getElementsByTagName('canvas')[0];   
-        // Print out our received message
-         // cinstruct the bearing value from the string received
+var gaugeElement = document.getElementsByTagName('canvas')[0]; 
+ gaugeElement.setAttribute('data-units','Data received !');
+
+        // construct the bearing value from the string received
         res = evt.data.substr(0, 9);
         res_msg = evt.data.substr(0, 9);
         //console.log("Received string  |" + evt.data+"|");
         //console.log("Received message |" + res_msg+"|");
 
          if (res == "Bearing :") {
-                //document.getElementById("display").innerHTML = "Rotor receiving bearing data";
-                res = evt.data.substr(9, 3);
+                 res = evt.data.substr(9, 3);
 
-                console.log("Bearing data sent to webapp: "+res);
+                //console.log("Bearing data sent to webapp: "+res);
         
                           if (Starting_App < 3){  
                             console.log("Allowing data to come.");
@@ -225,11 +248,9 @@ var gaugeElement = document.getElementsByTagName('canvas')[0];
                                 if (old_res != res) {
                                         gaugeElement.setAttribute('data-value', res);
                                         old_res = res;
-                                        endstop = res;
-                                       
+                                        endstop = res;                  
                                 }
-                              }
-               
+                              }        
          }
     
 
@@ -269,36 +290,44 @@ switch(evt.data) {
            var cw_status;
             cw_status = document.getElementById("button_cw").innerText;
             if (cw_status == "CW ON"){
-            doSend("toggleCW");
-            doSend("getCWState");
-            //console.log("CW switch is switched to OFF");
-            document.getElementById("button_cw").innerHTML='CW OFF<span class="s" role="status" aria-hidden="true"></span>'   
+                    doSend("toggleCW");
+                    doSend("getCWState");
+                    //console.log("CW switch is switched to OFF");
+                    document.getElementById("button_cw").innerHTML='CW OFF<span class="s" role="status" aria-hidden="true"></span>'   
             }
             var ccw_status;
             ccw_status = document.getElementById("button_ccw").innerText;
             if (ccw_status == "CCW ON"){
-            doSend("toggleCCW");
-            doSend("getCCWState");
-            //console.log("CCW switch is switched to OFF");
-            document.getElementById("button_ccw").innerHTML='CCW OFF;';
-            }
+                    doSend("toggleCCW");
+                    doSend("getCCWState");
+                    //console.log("CCW switch is switched to OFF");
+                    document.getElementById("button_ccw").innerHTML='CCW OFF;';
+                    }
             //console.log("Brake is is switched to ON");    
-            document.getElementById("button_brake").innerHTML = "BRAKE ON";
+            document.getElementById("brake").innerHTML = "BRAKE ON";
+
+  
             button_cw.disabled = true;
             button_ccw.disabled = true;
+            rot_but.disabled = true;
+            rot_val.disabled = true;
+        
+                
             break;
          case "7":
             //console.log("Brake is switched to OFF");
-            document.getElementById("button_brake").innerHTML = "BRAKE OFF";
+            document.getElementById("brake").innerHTML = "BRAKE OFF";
             button_cw.disabled = false;
             button_ccw.disabled = false;
+            rot_but.disabled = false;
+            rot_val.disabled = false;
             break;
 
 
         case "99":
             //console.log("Plate should be switched to red");  
             res_stop = 1;
-            document.getElementById("display").innerHTML = "Rotor reached endstop CCW";
+            //document.getElementById("display").innerHTML = "Rotor reached endstop CCW";
             GetRotorBearing();
             
             break;
@@ -310,47 +339,91 @@ switch(evt.data) {
 
 // Called when a WebSocket error occurs
 function onError(evt) {
-    //console.log("ERROR: " + evt.data);
-       ////document.getElementById("display_info").innerHTML = "Unknow error, please reload page";
+        var gaugeElement = document.getElementsByTagName('canvas')[0];  
+        gaugeElement.setAttribute('data-units', "Websocket error");
+        console.log("ERROR: " + evt.data);
+       
 
 }
  
 // Sends a message to the server (and prints it to the console)
 function doSend(message) {
-    //console.log("Sending: " + message);
+    console.log("Sending: " + message);
     websocket.send(message);
 }
  
 // executes all necessary action when one of the sw switches is pressed      
 function onPressButton(x) {
+var gaugeElement = document.getElementsByTagName('canvas')[0]; 
     switch(x){
         case 1:
-                if (endstop > 358) {
+                if (endstop => 359) {
                 //console.log("Going CW with rotorvalue: " + endstop);
-                //document.getElementById("display_info").innerHTML = "CW Endstop reached!";
+                 gaugeElement.setAttribute('data-units','CW Endstop reached!');
                 } else {
                 //document.getElementById("display_info").innerHTML = "Rotor receiving bearing data";
                 doSend("toggleCW");
                 doSend("getCWState");
+               
                 }
             break;
         case 2:
             if (endstop <= 2) {
                //console.log("Going CCW with rotorvalue: " + endstop);
-                //document.getElementById("display_info").innerHTML = "CCW endstop reached!";
+                gaugeElement.setAttribute('data-units','CCW Endstop reached!');
             } else {
                 //document.getElementById("display_info").innerHTML = "Rotor receiving bearing data";
                 doSend("toggleCCW");
                 doSend("getCCWState");
+                    
             }
              break;
         case 3:
-            doSend("toggleBRAKE");
-            doSend("getBRAKEState");
+      
             
             break;
        case 4:
+            // write function
+            
+            set_azimuth=document.getElementById("rot_val").value;
+            loop_azimuth = res;
+            console.log("Setting bearing value to :"+set_azimuth);
+            console.log("Current bearing value is : "+loop_azimuth);
+            var turning = (set_azimuth - loop_azimuth);
+            //console.log("The difference is : "+turning);
+ 
+            if (turning > 0) {
+                
+                cw_status = document.getElementById("button_cw").innerText;
+                //console.log("CW status is......... : "+cw_status);
+                if (cw_status = "CW OFF"){
+                        // send a command yo the esp and handle it there.
+                        console.log("Starting to turn CW ");    
+                        var set_msg = "MANUAL:"+set_azimuth;
+                        console.log("Manual rotating to :"+set_msg+" DEG.");
+                        gaugeElement.setAttribute('data-units',set_msg+" DEG");
+                        doSend(set_msg);
+                        doSend("toggleCW");
+                        doSend("getCWState");
+        
+                }
 
+            } else if (turning < 0) {
+                       
+                ccw_status = document.getElementById("button_ccw").innerText;
+                //console.log("CCW status is......... : "+ccw_status);
+                if (ccw_status = "CCW OFF"){
+                // send a command yo the esp and handle it there.
+                console.log("Starting to turn CCW ");    
+                var set_msg = "MANUAL:"+set_azimuth;
+                gaugeElement.setAttribute('data-units',set_msg+" DEG");
+                console.log("Manual rotating to :"+set_msg +" DEG.");
+                doSend(set_msg); 
+                doSend("toggleCCW");
+                doSend("getCCWState");
+                       }
+                }
+                
             break;
        default:
             break;         
@@ -446,20 +519,73 @@ window.addEventListener("load", init, false);
                         <div class="btn-group-vertical" align="center" role="group" aria-label="" style="padding-bottom: 0px" style="padding-top: 0px">
                                 <button type="button" class="btn btn-primary btn-lg custom1" id="button_ccw" onclick="onPressButton(2)" >CCW OFF</button>
                                 <button type="button" class="btn btn-primary btn-lg custom1" id="button_cw" onclick="onPressButton(1)">CW OFF</button>
-                                <button type="button" class="btn btn-danger custom1 btn-lg" data-toggle="popover" id="button_brake" onclick="onPressButton(3)">BRAKE OFF</button> 
+                                <button class="btn btn-success custom1" id="brake">BRAKE OFF</button>
                         </div>
                 </div>
-			<h3>TEXT CONTROL</h3>
+			<h3>MANUAL CONTROL</h3>
                 <div class="col-sm text-center" style="padding-top: 5px; padding-bottom: 5px">
                           <div class="col-sm text-center">
+                                <div class="btn-group-vertical" align="center" role="group" aria-label="SET AZIMUTH" style="padding-bottom: 0px" style="padding-top: 0px">
+                                         
+                                        <div class="input-group custom1">
+                                          <input type="number" id="rot_val" min="0" max="360" class="form-control" aria-label="azimuth in degrees">
+                                          <div class="input-group-append">
+                                            <span class="input-group-text"> °</span>
+                                   
+                                          </div>
+                                        </div>
+                                        
+                        
+                                <button id="rot_but" name="rot_but" class="btn btn-primary custom1" onclick="onPressButton(4)">Rotate</button>
+                        
+                                        
+                                 <button class="btn btn-success custom1" id="brake1">BRAKE OFF</button>
+                                  </div>
+                                  <script>
+                                  rot_val.oninput = function () {    
+                                  if (this.value > 360 || this.value < 0 ) {
+                                  this.value = 0; 
+                                  console.log(" max degrees bereikt");
                                 
-                                <input id="bearing_val" name="bearing_val" type="text" placeholder="degrees" class="form-control input-md" required="">
-                                <br>
-                                <button id="rot_but" name="rot_but" class="btn btn-primary">Rotate</button>
+                                  $("#Azi_Info").modal();
+                                        }
+                                      
+                                  }
+                                  </script>
                         
                         </div>
+
+<!-- Modal -->
+
+ <!-- Frame Modal Bottom -->
+<div class="modal fade bottom" id="Azi_Info" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+  aria-hidden="true">
+
+  <!-- Add class .modal-frame and then add class .modal-bottom (or other classes from list above) to set a position to the modal -->
+  <div class="modal-dialog modal-frame modal-bottom" role="document">
+
+
+    <div class="modal-content">
+      <div class="modal-body">
+        <div class="row d-flex justify-content-center align-items-center">
+
+          <p class="pt-3 pr-2">You can only set azimuth values between 0 and 360 degrees.
+          </p>
+
+          <button type="button" class="btn btn-dark" data-dismiss="modal">Close</button>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Frame Modal Bottom -->
+
+
                 </div>
 		<h3>CONFIGURATION</h3>
+                    
+                    
             <div class="col-sm text-center" style="padding-top: 5px; padding-bottom: 5px">
                           <div class="col-sm text-center">
   
@@ -506,22 +632,57 @@ window.addEventListener("load", init, false);
 	<script src="highlight.pack.js"></script>
 	<script>hljs.initHighlightingOnLoad();</script>
 	<script src="ziehharmonika.js"></script>
-	<script>
-            $(document).ready(function() {
+        
+<script>
+$(document).ready(function() {
 		$('.ziehharmonika').ziehharmonika({
 			collapsible: true,
 			prefix: '★'
 		});
 
 	
-	});
-	</script>
+});
+            
+$("#brake").click(function() {
+  $(this).toggleClass('btn-danger btn-success ');
+  var x = document.getElementById("brake");
+  if (x.innerHTML === "BRAKE OFF") {
+    x.innerHTML = "BRAKE ON";
+    doSend("toggleBRAKE");
+    doSend("getBRAKEState");
+
+  } else {
+    x.innerHTML = "BRAKE OFF";
+    doSend("toggleBRAKE");
+    doSend("getBRAKEState");
+
+  }
+});
+
+$("#brake1").click(function() {
+  $(this).toggleClass('btn-danger btn-success ');
+  var x = document.getElementById("brake1");
+  if (x.innerHTML === "BRAKE OFF") {
+    x.innerHTML = "BRAKE ON";
+    doSend("toggleBRAKE");
+    doSend("getBRAKEState");
+
+  } else {
+    x.innerHTML = "BRAKE OFF";
+    doSend("toggleBRAKE");
+    doSend("getBRAKEState");
+
+  }
+});
+ 
+
+</script>
 </div>
         
                <!-- Footer -->
         <footer id="sticky-footer" class="py-4 bg-dark text-white-50">
             <div class="container text-center" >
-            <small>GNU licence &copy; 2020 PA0ESH - V1.6</small>
+            <small>GNU licence &copy; 2020 PA0ESH - V1.8</small>
             </div>
       </footer>
     
