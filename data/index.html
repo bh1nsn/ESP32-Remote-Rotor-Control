@@ -4,31 +4,18 @@
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <!-- Bootstrap CSS -->
-          
+    <!-- Bootstrap CSS -->      
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="xcode.css">
 	<link rel="stylesheet" href="ziehharmonika.css">
+    <link rel="shortcut icon" href="#" />
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script type="text/javascript" src="gauge.min.js"></script>
     <script type="text/javascript" src="segment-display.js"></script>
-    
-
-
-<style>
-     	
-        h3 {
-			font-weight: normal;
-			font-size: 16px;
-		}
-
-</style>
           
+</head> 
 
-    
 
-  </head>
 <style>
 /*
 *
@@ -37,8 +24,11 @@
 * ==========================================
 *
 */
-
-    
+h3 {
+	font-weight: normal;
+	font-size: 16px;
+		}
+        
 .modal-content{        
         background-color:#f0431a !important;
         color: aliceblue;
@@ -138,6 +128,9 @@ var loop_azimuth;
 var set_azimuth
  
 var res;
+var conf1;
+
+        
 var old_res;
 var res_stop;
 res_stop = 0;
@@ -161,32 +154,15 @@ function init() {
     wsConnect();
 }
  
-function checkServerStatus()
-{
-    var img = document.createElement("img");
-    img.onload = function()
-    {
-        online=1;
-    };
-    img.onerror = function()
-    {
-        online=0;
-    };
-    img.src = "http://webrotor.local/europe.jpg";
-}
-
-
+     
+        
         
 // Call to connect to the WebSocket server
 function wsConnect() {
         var gaugeElement = document.getElementsByTagName('canvas')[0];   
         var url = "ws://webrotor.local:1337/";
-        checkServerStatus();
-        if (online == 0) {
-                        websocket = new WebSocket(url);
-       } else {
-                        websocket = new WebSocket(((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + ":1337");        
-         }
+        websocket = new WebSocket(url);
+        gaugeElement.setAttribute('data-units', "Websocket starting up");
         websocket.onopen = function(evt) { onOpen(evt) };
         websocket.onmessage = function(evt) { onMessage(evt) };
         websocket.onclose = function(evt) { onClose(evt) };
@@ -198,7 +174,7 @@ function wsConnect() {
         rot_val.disabled = true;
         rot_but.disabled = true;
         
-        gaugeElement.setAttribute('data-units', "Websocket starting up");
+        
         ////document.getElementById("display_info").innerHTML = "Web Rotor is initiated";
 }
  
@@ -222,9 +198,7 @@ function onOpen(evt) {
         button_cw.disabled = false;
         button_ccw.disabled = false;
         rot_val.disabled = false;
-        rot_but.disabled = false;
- 
-        
+        rot_but.disabled = false;      
 }
 
 // Called when the WebSocket connection is closed
@@ -247,28 +221,27 @@ var gaugeElement = document.getElementsByTagName('canvas')[0];
 
         // construct the bearing value from the string received
         res = evt.data.substr(0, 9);
+        conf1 = evt.data.substr(0, 7);
         res_msg = evt.data.substr(0, 9);
         //console.log("Received string  |" + evt.data+"|");
         //console.log("Received message |" + res_msg+"|");
 
          if (res == "Bearing :") {
                  res = evt.data.substr(9, 3);
-
-                //console.log("Bearing data sent to webapp: "+res);
+                 gaugeElement.setAttribute('data-value', res);
+                 console.log("Bearing data sent to webapp: "+res);
+                 display.setValue(res);
         
-                          if (Starting_App < 3){  
-                            console.log("Allowing data to come.");
-                            Starting_App++;
-                            //doSend("StartBearing"); 
-                            
-                            } else  {
-                                display.setValue(res);
-                                if (old_res != res) {
-                                        gaugeElement.setAttribute('data-value', res);
-                                        old_res = res;
-                                        endstop = res;                  
-                                }
-                              }        
+   
+         } else if (conf1 == "Config:") {
+                 var config_data1
+                 config_data1 = evt.data.substr(8, 6);
+                 
+                 var call = document.getElementById("usr1"); 
+                call.value = config_data1; 
+                          
+                 console.log("Configuration sent to webapp: "+config_data1);
+                 
          }
     
 
@@ -323,6 +296,7 @@ switch(evt.data) {
                     }
             //console.log("Brake is is switched to ON");    
             document.getElementById("brake").innerHTML = "BRAKE ON";
+             document.getElementById("brake1").innerHTML = "BRAKE ON";
 
   
             button_cw.disabled = true;
@@ -335,6 +309,7 @@ switch(evt.data) {
          case "7":
             //console.log("Brake is switched to OFF");
             document.getElementById("brake").innerHTML = "BRAKE OFF";
+            document.getElementById("brake1").innerHTML = "BRAKE OFF";
             button_cw.disabled = false;
             button_ccw.disabled = false;
             rot_but.disabled = false;
@@ -358,7 +333,7 @@ switch(evt.data) {
 // Called when a WebSocket error occurs
 function onError(evt) {
         var gaugeElement = document.getElementsByTagName('canvas')[0];  
-        gaugeElement.setAttribute('data-units', "Websocket error");
+        //    gaugeElement.setAttribute('data-units', "Websocket error");
         console.log("ERROR: " + evt.data);
        
 
@@ -377,9 +352,9 @@ var gaugeElement = document.getElementsByTagName('canvas')[0];
         case 1:
                 if (endstop >= 359) {
                 //console.log("Going CW with rotorvalue: " + endstop);
-                 gaugeElement.setAttribute('data-units','CW Endstop reached!');
+                 //    gaugeElement.setAttribute('data-units','CW Endstop reached!');
                 } else {
-                gaugeElement.setAttribute('data-units','Turning CW !!');
+                //    gaugeElement.setAttribute('data-units','Turning CW !!');
                 doSend("toggleCW");
                 doSend("getCWState");
                
@@ -388,9 +363,9 @@ var gaugeElement = document.getElementsByTagName('canvas')[0];
         case 2:
             if (endstop <= 2) {
                //console.log("Going CCW with rotorvalue: " + endstop);
-                gaugeElement.setAttribute('data-units','CCW Endstop reached!');
+                //    gaugeElement.setAttribute('data-units','CCW Endstop reached!');
             } else {
-                gaugeElement.setAttribute('data-units','Turning CCW !!');
+                //    gaugeElement.setAttribute('data-units','Turning CCW !!');
                 doSend("toggleCCW");
                 doSend("getCCWState");
                     
@@ -419,7 +394,7 @@ var gaugeElement = document.getElementsByTagName('canvas')[0];
                         console.log("Starting to turn CW ");    
                         var set_msg = "MANUAL:"+set_azimuth;
                         console.log("Rotating method :"+set_msg+" DEG.");
-                        gaugeElement.setAttribute('data-units',set_msg+" DEG");
+                        //    gaugeElement.setAttribute('data-units',set_msg+" DEG");
                         doSend(set_msg);
                         doSend("toggleCW");
                         doSend("getCWState");
@@ -434,7 +409,7 @@ var gaugeElement = document.getElementsByTagName('canvas')[0];
                 // send a command yo the esp and handle it there.
                 console.log("Starting to turn CCW ");    
                 var set_msg = "MANUAL:"+set_azimuth;
-                gaugeElement.setAttribute('data-units',set_msg+" DEG");
+                //    gaugeElement.setAttribute('data-units',set_msg+" DEG");
                 console.log("Rotating method :"+set_msg +" DEG.");
                 doSend(set_msg); 
                 doSend("toggleCCW");
@@ -443,6 +418,10 @@ var gaugeElement = document.getElementsByTagName('canvas')[0];
                 }
                 
             break;
+        case 5:
+              doSend("getConfig");      
+                    
+            break;
        default:
             break;         
     }
@@ -450,7 +429,7 @@ var gaugeElement = document.getElementsByTagName('canvas')[0];
          
 function GetRotorBearing()
 		{
-          doSend("getBEARINGState"); 
+          //doSend("getBEARINGState"); 
           //console.log("BEARING value requested");
 		}
     
@@ -459,7 +438,6 @@ window.addEventListener("load", init, false);
  
 </script>
 
-    
 <body>
 <div class="imageH">
     <div class="container-fluid">
@@ -508,10 +486,10 @@ window.addEventListener("load", init, false);
         data-color-units="#00ff1d"
         data-font-units-size="14"
         data-color-title="#f5f5f5"
-        data-animation-duration="400"
+        data-animation-duration="1200"
         data-value="0"
-        data-use-Min-Path="true"
-        data-animate-on-init="false"
+        data-use-Min-Path="false"
+        data-animate-on-init="true"
         
 ></canvas>
 
@@ -554,10 +532,10 @@ window.addEventListener("load", init, false);
                                         </div>
                                         
                         
-                                <button id="rot_but" name="rot_but" class="btn btn-primary custom1" onclick="onPressButton(4)">Rotate</button>
+                                 <button id="rot_but" name="rot_but" class="btn btn-primary custom1" onclick="onPressButton(4)">Rotate</button>
                         
                                         
-                                 <button class="btn btn-success custom1" id="brake1">BRAKE OFF</button>
+                                  <button class="btn btn-success custom1" id="brake1">BRAKE OFF</button>
                                   </div>
                                   <script>
                                   rot_val.oninput = function () {    
@@ -604,8 +582,8 @@ window.addEventListener("load", init, false);
 		<h3>CONFIGURATION</h3>
                     
                     
-            <div class="col-sm text-center" style="padding-top: 5px; padding-bottom: 5px">
-                          <div class="col-sm text-center">
+       <div class="col-sm text-center" style="padding-top: 5px; padding-bottom: 5px">
+       <div class="col-sm text-center">
   
 
       <h5 align="center">User Settings</h5> 
@@ -613,21 +591,19 @@ window.addEventListener("load", init, false);
                 <div class="input-group-prepend">
                         <span class="input-group-text">Callsign</span>
                 </div>
-                <input id="usr1" type="text" class="form-control">
+                <input id="usr1" placeholder="callsign" type="text" class="form-control">
         </div>
-               <div class="input-group mb-3 input-group-sm">
+        <div class="input-group mb-3 input-group-sm">
                 <div class="input-group-prepend">
                 <span class="input-group-text">Lat</span>
                 </div>
-                <input id="usr1" type="text" class="form-control">
-     
-                <div class="input-group mb-3 input-group-sm">
+                <input id="usr2" type="text" class="form-control" placeholder="">
                 <div class="input-group-prepend">
                 <span class="input-group-text">Lon</span>
                 </div>
-                <input id="usr1" type="text" class="form-control">
+                <input id="usr3" type="text" class="form-control" placeholder="">
         </div>
-                <div class="input-group mb-3 input-group-sm">               
+        <div class="input-group mb-3 input-group-sm">               
                   <div class="input-group-prepend">
                     <label class="input-group-text" for="inputGroupSelect01">Interface</label>
                   </div>
@@ -637,7 +613,13 @@ window.addEventListener("load", init, false);
                     <option value="2">WINTEST</option>
                     <option value="3">HRD</option>
                   </select>
-                </div>
+        </div>
+        <div class="input-group mb-3 input-group-sm">   
+                
+        <button id="config_but" name="config_but" class="btn btn-primary custom1" onclick="onPressButton(5)">Get Config</button>
+                                      
+                
+        </div>
     </div>
   </div>
 </div>
@@ -650,8 +632,9 @@ window.addEventListener("load", init, false);
 	<script src="highlight.pack.js"></script>
 	<script>hljs.initHighlightingOnLoad();</script>
 	<script src="ziehharmonika.js"></script>
-        
+
 <script>
+        
 $(document).ready(function() {
 		$('.ziehharmonika').ziehharmonika({
 			collapsible: true,
@@ -668,7 +651,6 @@ $("#brake").click(function() {
     x.innerHTML = "BRAKE ON";
     doSend("toggleBRAKE");
     doSend("getBRAKEState");
-
   } else {
     x.innerHTML = "BRAKE OFF";
     doSend("toggleBRAKE");
