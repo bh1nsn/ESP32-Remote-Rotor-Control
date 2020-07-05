@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <!-- Bootstrap CSS -->      
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
-    <link rel="stylesheet" href="xcode.css">
+     <link rel="stylesheet" href="xcode.css">
 	<link rel="stylesheet" href="ziehharmonika.css">
     <link rel="shortcut icon" href="#" />
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
@@ -24,6 +24,36 @@
 * ==========================================
 *
 */
+ .mem-fontsize{
+font-size: 11px !important;
+}  
+
+        
+        .btn-sq-lg {
+  width: 150px !important;
+  height: 150px !important;
+}
+
+.btn-sq {
+  width: 100px !important;
+  height: 100px !important;
+  font-size: 8px;
+}
+
+.btn-sq-sm {
+  width: 50px !important;
+  height: 50px !important;
+  font-size: 8px;
+}
+
+.btn-sq-xs {
+  width: 25px !important;
+  height: 25px !important;
+  padding:2px;
+}
+
+
+        
 h3 {
 	font-weight: normal;
 	font-size: 16px;
@@ -51,7 +81,19 @@ h3 {
      margin-bottom: 10px;
        margin-top: 10px;
 }
+.custom2 {
+     width: 350px !important;
+     margin-bottom: 10px;
+       margin-top: 10px;
+}
 
+.custom3 {
+     width: 250px !important;
+     margin-bottom: 10px;
+       margin-top: 10px;
+}
+
+        
 .jumbotron{
     margin-bottom: 0;
   }
@@ -145,7 +187,7 @@ var online =0;
 function init() {
     // Assign page elements to variables
     brake = document.getElementById("brake");
-    brake1 = document.getElementById("brake1");   
+    //brake1 = document.getElementById("brake1");   
     rot_but = document.getElementById("rot_but");
     rot_val = document.getElementById("rot_val");
     button_cw = document.getElementById("button_cw");
@@ -168,7 +210,7 @@ function wsConnect() {
         websocket.onclose = function(evt) { onClose(evt) };
         websocket.onerror = function(evt) { onError(evt) };
         brake.disabled = true;
-        brake1.disabled = true;
+        //brake1.disabled = true;
         button_cw.disabled = true;
         button_ccw.disabled = true;
         rot_val.disabled = true;
@@ -189,12 +231,13 @@ function onOpen(evt) {
         
         // Get the current position from the rotor
         //doSend("getBEARINGState"); 
+        doSend("getConfig"); 
         doSend("getBRAKEState");
         doSend("getCWState");
         doSend("getCCWState");
         //Enable the buttons
         brake.disabled = false;
-        brake1.disabled = false;
+        //brake1.disabled = false;
         button_cw.disabled = false;
         button_ccw.disabled = false;
         rot_val.disabled = false;
@@ -229,18 +272,28 @@ var gaugeElement = document.getElementsByTagName('canvas')[0];
          if (res == "Bearing :") {
                  res = evt.data.substr(9, 3);
                  gaugeElement.setAttribute('data-value', res);
-                 console.log("Bearing data sent to webapp: "+res);
+                 //console.log("Bearing data sent to webapp: "+res);
                  display.setValue(res);
         
    
          } else if (conf1 == "Config:") {
                  var config_data1
-                 config_data1 = evt.data.substr(8, 6);
                  
-                 var call = document.getElementById("usr1"); 
+                 // dissect this string Config:"PA0ESH" - "52°15.52' N" - "06°45.48' E" - "VERON/VRZA"
+                config_data1 = evt.data.substr(8, 6);
+                var call = document.getElementById("usr1"); 
                 call.value = config_data1; 
+                 config_data2 = evt.data.substr(19,11);
+                var Lat = document.getElementById("usr2"); 
+                Lat.value = config_data2; 
+                config_data3 = evt.data.substr(35, 11);
+                var Lon = document.getElementById("usr3"); 
+                Lon.value = config_data3; 
+                config_data4 = evt.data.substr(51, 10);
+                var Intface = document.getElementById("usr4"); 
+                Intface.value = config_data4; 
                           
-                 console.log("Configuration sent to webapp: "+config_data1);
+                console.log("Configuration received: "+evt.data);
                  
          }
     
@@ -309,7 +362,7 @@ switch(evt.data) {
          case "7":
             //console.log("Brake is switched to OFF");
             document.getElementById("brake").innerHTML = "BRAKE OFF";
-            document.getElementById("brake1").innerHTML = "BRAKE OFF";
+            //document.getElementById("brake1").innerHTML = "BRAKE OFF";
             button_cw.disabled = false;
             button_ccw.disabled = false;
             rot_but.disabled = false;
@@ -511,16 +564,21 @@ window.addEventListener("load", init, false);
 	<div class="container"> <!-- begin container zieharmonika -->
             <div class="ziehharmonika" >  
 			<h3>BUTTON CONTROL</h3>
-                <div class="col-sm text-center" style="padding-top: 5px; padding-bottom: 5px">
-                        <div class="btn-group-vertical" align="center" role="group" aria-label="" style="padding-bottom: 0px" style="padding-top: 0px">
+                                        
+       <div class="col-sm text-center" style="padding-top: 5px; padding-bottom: 5px; background-color: #0e0f01">
+       <div class="col-sm text-center">
+                         <div class="btn-group-vertical" align="center" role="group" aria-label="" style="padding-bottom: 0px" style="padding-top: 0px">
                                 <button type="button" class="btn btn-primary btn-lg custom1" id="button_ccw" onclick="onPressButton(2)" >CCW OFF</button>
                                 <button type="button" class="btn btn-primary btn-lg custom1" id="button_cw" onclick="onPressButton(1)">CW OFF</button>
                                 <button class="btn btn-success custom1" id="brake">BRAKE OFF</button>
                         </div>
-                </div>
+                
+               </div>
+        </div>
 			<h3>MANUAL CONTROL</h3>
-                <div class="col-sm text-center" style="padding-top: 5px; padding-bottom: 5px">
-                          <div class="col-sm text-center">
+    <div class="col-sm text-center" style="padding-top: 5px; padding-bottom: 5px; background-color: #0e0f01">
+       <div class="col-sm text-center">
+  
                                 <div class="btn-group-vertical" align="center" role="group" aria-label="SET AZIMUTH" style="padding-bottom: 0px" style="padding-top: 0px">
                                          
                                         <div class="input-group custom1">
@@ -532,11 +590,45 @@ window.addEventListener("load", init, false);
                                         </div>
                                         
                         
-                                 <button id="rot_but" name="rot_but" class="btn btn-primary custom1" onclick="onPressButton(4)">Rotate</button>
+                                 <button id="rot_but" name="rot_but" class="btn btn-primary custom1" style="padding-top: 3px; padding-bottom: 3px" onclick="onPressButton(4)">Rotate</button>
                         
                                         
-                                  <button class="btn btn-success custom1" id="brake1">BRAKE OFF</button>
+                                  <!-- <button class="btn btn-success custom1" id="brake1">BRAKE OFF</button>-->
+                                
+                                
+
+                                <div class="row" style="padding-top: 2px; padding-bottom: 2px" >
+                                        <div class="col-lg-12" label="memories" style="padding-top: 2px; padding-bottom: 2px" >
+                                        <div class="alert alert-success custom1"  style="padding-top: 2px; padding-bottom: 2px" role="alert">PRESET MEMORIES</div>
+                                          <p>
+
+                                            <a href="#" id="mem1" class="btn btn-sq-xs btn-warning mem-fontsize">
+                                              <i class="fa fa-user fa-1x" >1</i><br/>
+                                            </a>
+                                            <a href="#" id="mem2" class="btn btn-sq-xs btn-warning mem-fontsize">
+                                              <i class="fa fa-user fa-1x" >2</i><br/>
+                                            </a>
+                                            <a href="#" id="mem3" class="btn btn-sq-xs btn-warning mem-fontsize">
+                                              <i class="fa fa-user fa-1x" >3</i><br/>
+                                            </a>
+                                            <a href="#" id="mem4" class="btn btn-sq-xs btn-warning mem-fontsize">
+                                              <i class="fa fa-user fa-1x" >4</i><br/>
+                                            </a>
+                                            <a href="#" id="mem5" class="btn btn-sq-xs btn-warning mem-fontsize">
+                                              <i class="fa fa-user fa-1x" >5</i><br/>
+                                            </a>
+                                            <a href="#" id="mem6" class="btn btn-sq-xs btn-warning mem-fontsize">
+                                              <i class="fa fa-user fa-1x" >6</i><br/>
+                                            </a>
+                                             <a href="#" id="mem7" class="btn btn-sq-xs btn-warning mem-fontsize">
+                                              <i class="fa fa-user fa-1x" >7</i><br/>
+                                            </a>
+                                          </p>
+                                        </div>
+                                    </div>      
                                   </div>
+                                  
+                                  
                                   <script>
                                   rot_val.oninput = function () {    
                                   if (this.value > 360 || this.value < 0 ) {
@@ -569,6 +661,8 @@ window.addEventListener("load", init, false);
           </p>
 
           <button type="button" class="btn btn-dark" data-dismiss="modal">Close</button>
+                
+                        
 
         </div>
       </div>
@@ -582,18 +676,18 @@ window.addEventListener("load", init, false);
 		<h3>CONFIGURATION</h3>
                     
                     
-       <div class="col-sm text-center" style="padding-top: 5px; padding-bottom: 5px">
+       <div class="col-sm text-center" style="padding-top: 5px; padding-bottom: 5px; background-color: #0e0f01" >
        <div class="col-sm text-center">
   
 
       <h5 align="center">User Settings</h5> 
-        <div class="input-group mb-3 input-group-sm">
+        <div class="input-group mb-3 input-group-sm custom1">
                 <div class="input-group-prepend">
                         <span class="input-group-text">Callsign</span>
                 </div>
                 <input id="usr1" placeholder="callsign" type="text" class="form-control">
         </div>
-        <div class="input-group mb-3 input-group-sm">
+        <div class="input-group mb-3 input-group-sm custom2">
                 <div class="input-group-prepend">
                 <span class="input-group-text">Lat</span>
                 </div>
@@ -603,11 +697,11 @@ window.addEventListener("load", init, false);
                 </div>
                 <input id="usr3" type="text" class="form-control" placeholder="">
         </div>
-        <div class="input-group mb-3 input-group-sm">               
+        <div class="input-group mb-3 input-group-sm custom3">               
                   <div class="input-group-prepend">
                     <label class="input-group-text" for="inputGroupSelect01">Interface</label>
                   </div>
-                  <select class="custom-select" id="inputGroupSelect01">
+                  <select class="custom-select" id="usr4">
                     <option selected>Choose...</option>
                     <option value="1">VERON/VRZA</option>
                     <option value="2">WINTEST</option>
