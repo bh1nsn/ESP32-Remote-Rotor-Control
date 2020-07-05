@@ -20,6 +20,8 @@ Switches are showing spinners, indication the rotor is turning. They are not (ye
 
 In case you have a rotor brake and apply this break, first any turning is stopped and then the brake is applied. From then on you cannot switch CW or CCW on, until the brake is released.
 
+Furthermore it is posible to operate the rotor by entering manually a bearing value. The rotor will then turn to that value and stop when that bearing has been reached. This modus operandi will be extend by a couple of memory banks which you can programme.
+
 
 # Compass indicator
 
@@ -28,7 +30,7 @@ Connect one side to GND and the other side to the 3.3V of the ESP32. Connect the
 The values of the ADC1 are then converted from 0-4096, into 0 - 360 degrees.
 Since the ADC is not 100% linear, you may have to put some small resistors from GND to the potentiometer as well as from 3.3V to the potentiometer. This is still WIP on my side.
 
-A small capacitor of 1nF helps to remove some noise but you may experiment with other values. Currently I have a 1 nF and a 10uF in parallel connected to pin 34 (the ADC channel used for the bearing)
+A small capacitor of 1nF helps to remove some noise but you may experiment with other values. Currently I have a 1 nF in parallel connected to pin 34 (the ADC channel used for the bearing). Experiments are continuing using a separate super stabile 3.3 ref voltage. 
 
 
 # In the making:
