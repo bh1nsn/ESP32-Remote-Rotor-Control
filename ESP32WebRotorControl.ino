@@ -40,7 +40,7 @@
                 Internal flash File system contains web pages index.htmL, update.html and some css and js files
                 Use ESP32 Tool to upload File system contents via Arduino IDE.
                 
-  Date:         03-07-2020
+  Date:         04-07-2020
  
   Author:       Erik Schott - erik@pa0esh.com
 --------------------------------------------------------------*/
@@ -96,8 +96,10 @@ char *rot_string;
 char client_rotor;
 String rotor;
 String rotor_stop;
-
-
+String callsign;
+String Lat;
+String Lon;
+String Interface;
 
 AsyncWebServer server(80);
 WebSocketsServer webSocket = WebSocketsServer(1337);
@@ -244,6 +246,23 @@ void onWebSocketEvent(uint8_t client_num,
         Serial.printf("Sending to [%u]: %s\n", client_num, msg_buf);
         webSocket.broadcastTXT(msg_buf);
 
+      // Return the WiFi IP number to the client
+      } else if ( strcmp((char *)payload, "getWiFiIp") == 0 ) {
+      sprintf(msg_buf, "%d", WiFi.localIP()); 
+      Serial.printf("Sending to [%u]: %s\n", client_num, msg_buf);      
+      webSocket.broadcastTXT(msg_buf);
+
+
+// Return the  configuration items to the client - reading them from spiffs file test.txt
+      } else if ( strcmp((char *)payload, "getConfig") == 0 ) {
+         Serial.println("getConfig identified !");
+         send_config();
+        
+       
+      //Serial.printf("Sending to [%u]: %s\n", client_num, msg_buf);      
+      //webSocket.broadcastTXT(msg_buf);
+
+ 
 // Allow the sending of bearing data - client is ready
       } else if ( strcmp((char *)payload, "StartBearing") == 0 ) {
         StartBearing = 1;
@@ -381,30 +400,6 @@ void onHLPRequest(AsyncWebServerRequest *request) {
 }
 
 
-// Callback: send javascript gauge meter
-void onMPRequest(AsyncWebServerRequest *request) {
-  IPAddress remote_ip = request->client()->remoteIP();
-  Serial.println("[" + remote_ip.toString() +
-                  "] HTTP GET request of " + request->url());
-  request->send(SPIFFS, "/connected.mp3", "application/javascript");
-}
-
-// Callback: send bulbon and off
-void onGIFONRequest(AsyncWebServerRequest *request) {
-  IPAddress remote_ip = request->client()->remoteIP();
-  Serial.println("[" + remote_ip.toString() +
-                  "] HTTP GET request of " + request->url());
-  request->send(SPIFFS, "/pic_bulbon.gif", "text/plain");
-}
-
-// Callback: send bulbon and off
-void onGIFOFFRequest(AsyncWebServerRequest *request) {
-  IPAddress remote_ip = request->client()->remoteIP();
-  Serial.println("[" + remote_ip.toString() +
-                  "] HTTP GET request of " + request->url());
-  request->send(SPIFFS, "/pic_bulboff.gif", "text/plain");
-}
-
 // Callback: send bg pic
 void onJPGRequest(AsyncWebServerRequest *request) {
   IPAddress remote_ip = request->client()->remoteIP();
@@ -413,6 +408,13 @@ void onJPGRequest(AsyncWebServerRequest *request) {
   request->send(SPIFFS, "/europe.jpg", "text/plain");
 }
 
+// Callback: send bg pic
+void onPNGRequest(AsyncWebServerRequest *request) {
+  IPAddress remote_ip = request->client()->remoteIP();
+  Serial.println("[" + remote_ip.toString() +
+                  "] HTTP GET request of " + request->url());
+  request->send(SPIFFS, "/1x1-test_netwerk.png", "text/plain");
+}
 
 // Callback: send 404 if requested file does not exist
 void onPageNotFound(AsyncWebServerRequest *request) {
@@ -428,7 +430,7 @@ void onPageNotFound(AsyncWebServerRequest *request) {
     ccw_state = stop_state;
     digitalWrite(cw_pin, stop_state);
     digitalWrite(ccw_pin, stop_state);
-    Serial.print("CW & CCW switches to OFF ");
+    Serial.print("CW & CCW switches both to OFF - EMERGENCY STOP ");
  }
 /***********************************************************
  * Main
@@ -459,12 +461,23 @@ while (WiFi.status() != WL_CONNECTED) {
 }
   Serial.print("Local IP: ");
   Serial.println(WiFi.localIP());
+
   // Make sure we can read the file system
   if( !SPIFFS.begin()){
     Serial.println("Error mounting SPIFFS");
     while(1);
   }
-  
+
+// begin of spiffs reading
+File root = SPIFFS.open("/");
+File file = root.openNextFile();
+  while(file){
+      Serial.print("FILE: ");
+      Serial.println(file.name());
+      file = root.openNextFile();
+  }
+
+// end of spiffs
   if (!MDNS.begin("webrotor")) {
         Serial.println("Error setting up MDNS responder!");
      while(1) {
@@ -494,6 +507,7 @@ while (WiFi.status() != WL_CONNECTED) {
   server.on("/gauge.min.js", HTTP_GET, onJGRequest);
   server.on("/bootstrap.min.js", HTTP_GET, onBMRequest);
   server.on("/europe.jpg", HTTP_GET, onJPGRequest);
+  server.on("/1x1-test_netwerk.png", HTTP_GET, onPNGRequest);
   server.on("/segment-display.js", HTTP_GET, on7SEGRequest);
 
   // Handle requests for pages that do not exist
@@ -511,6 +525,41 @@ while (WiFi.status() != WL_CONNECTED) {
   webSocket.onEvent(onWebSocketEvent);
   
 }
+
+void send_config(){
+      String config_id;
+      Serial.println("getCondif sub routine entered !");
+      File file2 = SPIFFS.open("/test.txt", "r");
+        if (!file2) {
+          Serial.println("Failed to open file for reading");
+          return;
+        }
+        Serial.println("File Content:");
+        while (file2.available()) {
+        String line = file2.readStringUntil('\n'); // lees het bestand lijn voor lijn.
+        if (line.substring(0,3) == "4 -") {
+            Serial.println(line.substring(13));
+            callsign = line.substring(13);
+        }
+          if (line.substring(0,3) == "5 -") {
+              Serial.println(line.substring(8));
+              Lat = line.substring(8);
+        }
+        if (line.substring(0,3) == "6 -") {
+           Serial.println(line.substring(8));
+           Lon=line.substring(8);
+        }
+        if (line.substring(0,3) == "7 -") {
+            Serial.println(line.substring(14));
+            Interface=line.substring(14);
+        }
+      }
+      config_id  = "Config:"+callsign+" - "+Lat+" - "+Lon+" - "+Interface;
+      webSocket.broadcastTXT(config_id);
+      Serial.println(config_id);
+  
+}
+
 
 // Rotor bearing values taken from 500 ohm potentiometer in rotor itself 
 // middle pin connects to 34, one side to GND and one side to 3.3V
@@ -530,15 +579,12 @@ void stop_manual(){
                Serial.printf("De CW state was switched to %u\n", cw_state);
                rotor_stop = String(3);
                webSocket.broadcastTXT(rotor_stop);
-               rotor = String(graden);
-               rotor = "Bearing :"+rotor,
-               webSocket.broadcastTXT(rotor);
                Serial.print("Rotor stopped at : ");
                Serial.println(graden);
                set_man=0;
                delay(500);
   
- }  else if (ccw_state ==0 && set_man ==1 && graden < set_azi){
+ }  else if (ccw_state ==0 && set_man ==1 && graden < set_azi+10){
                ccw_state=1;
                digitalWrite(ccw_pin, ccw_state);
                Serial.printf("De CCW state was switched to %u\n", cw_state);
@@ -546,9 +592,6 @@ void stop_manual(){
                webSocket.broadcastTXT(rotor_stop);
                Serial.print("Rotor stopped at : ");
                Serial.println(graden);
-               rotor = String(graden);
-               rotor = "Bearing :"+rotor,
-               webSocket.broadcastTXT(rotor);
                set_man=0;
                delay(500);
   }
@@ -559,20 +602,16 @@ void stop_manual(){
 void emergency_stop(){
        rotor_stop = String(99);
        if ((analog_val < 100) && (ccw_state == 0) ) {
-           rotor_stop = String(99);
-           webSocket.broadcastTXT(rotor_stop);
-           ccw_state = 1;
+            ccw_state = 1;
            digitalWrite(ccw_pin, ccw_state);
            rotor_stop = String(5);
            webSocket.broadcastTXT(rotor_stop);
            set_man=0;
            delay(1000);
-    } else if (analog_val > 4000 && cw_state == 0 ) {
+    } else if (analog_val > 4060 && cw_state == 0 ) {
          rotor_stop = String(3);
          cw_state = 1;
          digitalWrite(cw_pin, cw_state);
-         webSocket.broadcastTXT(rotor_stop);
-         rotor_stop = String(99);
          webSocket.broadcastTXT(rotor_stop);
          set_man=0;
          delay(1000);
@@ -582,11 +621,12 @@ void emergency_stop(){
 
 // routine to sent continously the bearing values
 void sent_bearing_ws(){
-     
      read_rotor_bearing();
      rotor = String(graden);
      rotor = "Bearing :"+rotor,
      webSocket.broadcastTXT(rotor);
+     //Serial.print("Sending bearing data to client :");
+     //Serial.println(analog_val);
      analog_val_old = analog_val;
      emergency_stop();   
 }
